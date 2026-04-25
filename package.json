@@ -9,12 +9,26 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@radix-ui/react-dialog": "^1.1.15",
+    "@radix-ui/react-popover": "^1.1.15",
+    "@radix-ui/react-slot": "^1.2.4",
+    "aframe": "^1.7.1",
+    "axios": "^1.15.2",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "lucide-react": "^1.11.0",
+    "mind-ar": "^1.2.5",
     "mongodb": "^6.21.0",
     "mongoose": "^8.23.0",
     "next": "16.2.4",
+    "pusher": "^5.3.3",
+    "pusher-js": "^8.5.0",
     "react": "19.2.4",
     "react-dom": "19.2.4",
-    "zod": "^4.3.6"
+    "recharts": "^3.8.1",
+    "tailwind-merge": "^3.5.0",
+    "zod": "^4.3.6",
+    "zustand": "^5.0.12"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
