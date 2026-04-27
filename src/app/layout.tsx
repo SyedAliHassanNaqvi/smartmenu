@@ -42,7 +42,9 @@ export default function RootLayout({
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              if ('serviceWorker' in navigator) {
+              // Disable Service Worker in development to avoid caching issues
+              // Enable in production for PWA support
+              if ('serviceWorker' in navigator && false) {
                 window.addEventListener('load', () => {
                   navigator.serviceWorker.register('/sw.js').catch(err => {
                     console.log('SW registration failed:', err);

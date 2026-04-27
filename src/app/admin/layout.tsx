@@ -29,7 +29,13 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
             href="/admin/tables"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
-            Tables & QR Codes
+            Tables
+          </a>
+          <a
+            href="/admin/qr-codes"
+            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+          >
+            QR Codes
           </a>
         </nav>
       </aside>

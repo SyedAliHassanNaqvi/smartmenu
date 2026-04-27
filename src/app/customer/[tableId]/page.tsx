@@ -1,5 +1,6 @@
 'use client';
 
+import { use } from 'react';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
@@ -44,7 +45,10 @@ const mockMenuItems = [
   },
 ];
 
-export default function TableView({ params }: { params: { tableId: string } }) {
+export default function TableView({ params }: { params: Promise<{ tableId: string }> }) {
+  // Unwrap the params promise using React.use()
+  const resolvedParams = use(params);
+  
   const [cart, setCart] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] = useState('all');
 
@@ -64,7 +68,7 @@ export default function TableView({ params }: { params: { tableId: string } }) {
     <div className="space-y-8">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-gray-900">Welcome!</h1>
-        <p className="text-gray-600 mt-2">Table ID: {params.tableId}</p>
+        <p className="text-gray-600 mt-2">Table ID: {resolvedParams.tableId}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
