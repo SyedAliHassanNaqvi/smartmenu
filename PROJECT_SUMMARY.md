@@ -46,8 +46,7 @@ This document summarizes the fully-implemented **SmartMenu** project - an AI-pow
 
 #### Database Layer
 
-- `src/lib/dbConnect.ts` - MongoDB connection with connection pooling
-- `src/app/lib/dbConnect.ts` - Alternative path configuration
+- `src/lib/db.ts` - MongoDB connection with connection pooling, robust error handling, and pool management
 
 #### Validation & Schemas
 
