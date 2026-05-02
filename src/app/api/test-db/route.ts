@@ -4,7 +4,19 @@ import mongoose from 'mongoose';
 
 export async function GET() {
   try {
-    await dbConnect();
+    try {
+      await dbConnect();
+    } catch (dbError) {
+      console.error('Database connection failed:', dbError);
+      return NextResponse.json(
+        { 
+          status: 'error', 
+          message: dbError instanceof Error ? dbError.message : 'Database connection failed',
+          timestamp: new Date().toISOString()
+        },
+        { status: 503 }
+      );
+    }
     
     const connectionState = mongoose.connection.readyState;
     const states: { [key: number]: string } = {

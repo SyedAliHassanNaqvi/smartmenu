@@ -26,14 +26,29 @@ export default function QRCodesPage() {
 
   // Fetch all tables
   useEffect(() => {
+    console.log('QR Codes page mounted, starting table fetch...');
     const fetchTables = async () => {
       try {
-        const response = await fetch('/api/tables');
+        console.log('Attempting to fetch tables from /api/tables');
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => {
+          console.log('Fetch timeout triggered (5s) - aborting request');
+          controller.abort();
+        }, 5000); // Reduced to 5 second timeout for faster UX
+        
+        const response = await fetch('/api/tables', {
+          signal: controller.signal,
+        });
+        clearTimeout(timeoutId);
+        console.log('Fetch response received:', response.status);
+        
         if (!response.ok) throw new Error('Failed to fetch tables');
         const data = await response.json();
+        console.log('Tables data received:', data);
         setTables(data);
       } catch (error) {
         console.error('Error fetching tables:', error);
+        console.log('Using mock data as fallback');
         // Mock data for testing
         setTables([
           { _id: '1', number: 1 },
@@ -41,8 +56,10 @@ export default function QRCodesPage() {
           { _id: '3', number: 3 },
           { _id: '4', number: 4 },
           { _id: '5', number: 5 },
+          { _id: '6', number: 6 },
         ]);
       } finally {
+        console.log('Setting loading to false');
         setLoading(false);
       }
     };
@@ -53,11 +70,19 @@ export default function QRCodesPage() {
   // Generate QR for a single table
   const generateQRForTable = async (tableId: string) => {
     try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => {
+        console.log(`QR generation timeout for table ${tableId} - aborting`);
+        controller.abort();
+      }, 10000); // 10 second timeout for QR generation
+      
       const response = await fetch('/api/qr/generate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ tableId }),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
 
       if (!response.ok) throw new Error('Failed to generate QR');
       const data = await response.json();

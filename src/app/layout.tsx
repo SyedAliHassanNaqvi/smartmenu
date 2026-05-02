@@ -1,6 +1,8 @@
 import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import { RootProvider } from "./providers";
+import { NetworkStatus } from "@/components/ui/network-status";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -38,15 +40,21 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-title" content="SmartMenu" />
       </head>
       <body className={inter.className}>
-        {children}
+        <RootProvider>
+          {children}
+        </RootProvider>
+        <NetworkStatus />
         <script
           dangerouslySetInnerHTML={{
             __html: `
-              // Disable Service Worker in development to avoid caching issues
-              // Enable in production for PWA support
-              if ('serviceWorker' in navigator && false) {
+              // Service Worker registration with update checking
+              if ('serviceWorker' in navigator) {
                 window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js').catch(err => {
+                  navigator.serviceWorker.register('/sw.js?v=' + Date.now(), {
+                    updateViaCache: 'none'
+                  }).then(registration => {
+                    console.log('SW registered:', registration);
+                  }).catch(err => {
                     console.log('SW registration failed:', err);
                   });
                 });

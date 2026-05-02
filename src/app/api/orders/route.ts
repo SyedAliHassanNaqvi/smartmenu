@@ -5,7 +5,15 @@ import { createOrderSchema } from "@/lib/validations/order";
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
+    try {
+      await dbConnect();
+    } catch (dbError) {
+      console.warn('Database connection failed:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed. Please try again later.' },
+        { status: 503 }
+      );
+    }
 
     const body = await request.json();
     const validatedData = createOrderSchema.parse(body);
@@ -22,7 +30,15 @@ export async function POST(request: NextRequest) {
 
 export async function GET(request: NextRequest) {
   try {
-    await dbConnect();
+    try {
+      await dbConnect();
+    } catch (dbError) {
+      console.warn('Database connection failed:', dbError);
+      return NextResponse.json(
+        { error: 'Database connection failed. Please try again later.' },
+        { status: 503 }
+      );
+    }
 
     const { searchParams } = new URL(request.url);
     const tableId = searchParams.get("tableId");

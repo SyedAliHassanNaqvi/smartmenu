@@ -1,8 +1,6 @@
-const CACHE_NAME = "smartmenu-v1";
+const CACHE_NAME = "smartmenu-v2";
 const urlsToCache = [
   "/",
-  "/index.html",
-  "/manifest.json",
   "/offline.html",
 ];
 
@@ -10,9 +8,15 @@ const urlsToCache = [
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(urlsToCache);
+      // Only cache essential files that definitely exist
+      return cache.addAll(urlsToCache).catch(err => {
+        console.warn('Failed to cache some files:', err);
+        // Continue anyway - not critical
+        return undefined;
+      });
     })
   );
+  self.skipWaiting();
 });
 
 // Activate event - clean up old caches
@@ -26,6 +30,7 @@ self.addEventListener("activate", (event) => {
       );
     })
   );
+  self.clients.claim();
 });
 
 // Fetch event - serve from cache, fallback to network
@@ -35,6 +40,22 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
+  // Don't cache HTML pages or dynamic routes - always fetch from network
+  const url = new URL(event.request.url);
+  const isHtmlPage = event.request.destination === "document" || url.pathname.endsWith(".html");
+  const isDynamicRoute = url.pathname.includes("/admin/") || url.pathname.includes("/customer/");
+
+  if (isHtmlPage || isDynamicRoute) {
+    // Always fetch dynamic pages from network
+    event.respondWith(
+      fetch(event.request).catch(() => {
+        return caches.match("/offline.html");
+      })
+    );
+    return;
+  }
+
+  // Cache static assets only (CSS, JS, images, fonts, etc)
   event.respondWith(
     caches.match(event.request).then((response) => {
       if (response) {
