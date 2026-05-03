@@ -1,8 +1,19 @@
 import { NextResponse } from 'next/server';
 import { randomUUID } from 'crypto';
+import dbConnect from '@/lib/db';
+import { Invitation } from '@/lib/models/invitation.model';
+import { randomBytes } from 'crypto';
 
 export async function POST(request: Request) {
-  const { amount, currency } = await request.json();
+  const { amount, currency, restaurantName, ownerEmail, ownerName } = await request.json();
+
+  // Validate required fields for invitation
+  if (!restaurantName || !ownerEmail || !ownerName) {
+    return NextResponse.json(
+      { error: 'Restaurant name, owner email, and owner name are required' },
+      { status: 400 }
+    );
+  }
 
   const orderId = `ORDER_${Date.now()}`;
   const cur = currency || 'EUR';
@@ -19,8 +30,8 @@ export async function POST(request: Request) {
       recurrence: {
         action: 'NO_RECURRING',
       },
-      resultUrl: `${process.env.NEXT_PUBLIC_APP_URL}/success`,
-      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/cancel`,
+      resultUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment/success?orderId=${orderId}`,
+      cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/payment/cancel?orderId=${orderId}`,
     },
   };
 
@@ -64,5 +75,51 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'No hostedPage in response', raw: data }, { status: 502 });
   }
 
-  return NextResponse.json({ url: data.hostedPage });
+  // Store payment info for later verification (you might want to use a database here)
+  // For now, we'll create the invitation when payment succeeds
+
+  return NextResponse.json({
+    url: data.hostedPage,
+    orderId
+  });
+}
+
+// Webhook endpoint to handle payment success
+export async function PUT(request: Request) {
+  try {
+    const { orderId, status, restaurantName, ownerEmail, ownerName, amount, currency } = await request.json();
+
+    if (status !== 'success') {
+      return NextResponse.json({ message: 'Payment not successful' });
+    }
+
+    await dbConnect();
+
+    // Generate unique invitation token
+    const invitationToken = randomBytes(32).toString('hex');
+
+    // Create invitation record
+    const invitation = new Invitation({
+      email: ownerEmail,
+      invitationToken,
+      restaurantName,
+      status: 'pending',
+      paymentId: orderId,
+      amount: parseFloat(amount),
+      currency: currency || 'EUR',
+    });
+
+    await invitation.save();
+
+    // TODO: Send email with invitation link using Resend API
+    // const setupLink = `${process.env.NEXT_PUBLIC_APP_URL}/setup?token=${invitationToken}`;
+    // await sendInvitationEmail(ownerEmail, restaurantName, setupLink);
+
+    console.log(`Invitation created for ${ownerEmail} with token ${invitationToken}`);
+
+    return NextResponse.json({ success: true, invitationToken });
+  } catch (error: any) {
+    console.error('Error processing payment success:', error);
+    return NextResponse.json({ error: 'Failed to process payment' }, { status: 500 });
+  }
 }

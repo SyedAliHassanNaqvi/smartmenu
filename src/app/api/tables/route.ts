@@ -1,88 +1,111 @@
 import { NextRequest, NextResponse } from 'next/server';
+import jwt from 'jsonwebtoken';
 import dbConnect from '@/lib/db';
+import { Table } from '@/lib/models/table.model';
 
 /**
  * GET /api/tables
- * Fetch all tables with their occupancy status
+ * Fetch all tables for the authenticated restaurant
  */
 export async function GET(request: NextRequest) {
-  // Mock data to return quickly - primary response
-  const mockTables = [
-    { _id: '1', number: 1, occupancy: 0, status: 'available' },
-    { _id: '2', number: 2, occupancy: 0, status: 'available' },
-    { _id: '3', number: 3, occupancy: 0, status: 'available' },
-    { _id: '4', number: 4, occupancy: 0, status: 'available' },
-    { _id: '5', number: 5, occupancy: 0, status: 'available' },
-    { _id: '6', number: 6, occupancy: 2, status: 'occupied' },
-  ];
-
   try {
-    // Try to connect to database with a timeout, but return mock data immediately
-    const dbPromise = (async () => {
-      try {
-        await dbConnect();
-        console.log("Database connected");
-        // Could fetch real data here if needed
-        return mockTables;
-      } catch (dbError) {
-        console.warn('Database connection failed, using mock data:', dbError);
-        return mockTables;
-      }
-    })();
+    // Get token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return NextResponse.json(
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
 
-    // Wait maximum 2 seconds for database, otherwise return mock data
-    const result = await Promise.race([
-      dbPromise,
-      new Promise<typeof mockTables>(resolve => 
-        setTimeout(() => {
-          console.log('Database took too long, returning mock data immediately');
-          resolve(mockTables);
-        }, 2000)
-      ),
-    ]);
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const restaurantId = decoded.restaurantId;
 
-    return NextResponse.json(result);
+    if (!restaurantId) {
+      return NextResponse.json(
+        { error: 'Restaurant ID not found in token' },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    const tables = await Table.find({ restaurantId })
+      .sort({ tableNumber: 1 })
+      .select('_id tableNumber status capacity qrCode lastOccupiedAt createdAt');
+
+    return NextResponse.json(tables);
   } catch (error: any) {
     console.error('Error fetching tables:', error);
-    return NextResponse.json(mockTables); // Return mock data on any error
+    return NextResponse.json(
+      { error: 'Failed to fetch tables' },
+      { status: 500 }
+    );
   }
 }
 
 /**
  * POST /api/tables
- * Create a new table
+ * Create a new table for the authenticated restaurant
  */
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
-
-    const body = await request.json();
-    const { number, capacity } = body;
-
-    if (!number || number < 1) {
+    // Get token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { error: 'Invalid table number' },
+        { error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const restaurantId = decoded.restaurantId;
+
+    if (!restaurantId) {
+      return NextResponse.json(
+        { error: 'Restaurant ID not found in token' },
         { status: 400 }
       );
     }
 
-    // TODO: Create table in database
-    // const table = await Table.create({ number, capacity, occupancy: 0, status: 'available' });
+    const { tableNumber, capacity = 4 } = await request.json();
 
-    const newTable = {
-      _id: Date.now().toString(),
-      number,
-      capacity: capacity || 4,
-      occupancy: 0,
+    if (!tableNumber || tableNumber < 1) {
+      return NextResponse.json(
+        { error: 'Valid table number is required' },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    // Check if table number already exists for this restaurant
+    const existingTable = await Table.findOne({ restaurantId, tableNumber });
+    if (existingTable) {
+      return NextResponse.json(
+        { error: 'Table number already exists' },
+        { status: 409 }
+      );
+    }
+
+    const table = new Table({
+      restaurantId,
+      tableNumber,
+      capacity,
       status: 'available',
-    };
+    });
 
-    return NextResponse.json(newTable, { status: 201 });
+    await table.save();
+
+    return NextResponse.json(table, { status: 201 });
   } catch (error: any) {
     console.error('Error creating table:', error);
     return NextResponse.json(
-      { error: error.message || 'Failed to create table' },
-      { status: 400 }
+      { error: 'Failed to create table' },
+      { status: 500 }
     );
   }
 }

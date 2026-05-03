@@ -3,6 +3,11 @@ import { IProduct } from "@/types/models";
 
 const productSchema = new mongoose.Schema<IProduct>(
   {
+    restaurantId: {
+      type: String,
+      required: true,
+      index: true, // Multi-tenancy: every product belongs to a restaurant
+    },
     name: {
       type: String,
       required: [true, "Product name is required"],
@@ -58,5 +63,9 @@ const productSchema = new mongoose.Schema<IProduct>(
   },
   { timestamps: true }
 );
+
+// Index for efficient multi-tenant queries
+productSchema.index({ restaurantId: 1, category: 1 });
+productSchema.index({ restaurantId: 1, isAvailable: 1 });
 
 export const Product = mongoose.models.Product || mongoose.model<IProduct>("Product", productSchema);

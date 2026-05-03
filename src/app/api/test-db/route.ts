@@ -26,6 +26,19 @@ export async function GET() {
       3: 'Disconnecting',
     };
 
+    if (connectionState !== 1) {
+      return NextResponse.json(
+        {
+          status: 'error',
+          message: 'Database did not reach connected state',
+          database: states[connectionState] || 'Unknown',
+          readyState: connectionState,
+          timestamp: new Date().toISOString(),
+        },
+        { status: 503 }
+      );
+    }
+
     return NextResponse.json({ 
       status: 'success',
       message: 'Database connected!',

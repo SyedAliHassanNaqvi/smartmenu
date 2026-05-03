@@ -36,7 +36,11 @@ export default function QRCodesPage() {
           controller.abort();
         }, 5000); // Reduced to 5 second timeout for faster UX
         
-        const response = await fetch('/api/tables', {
+const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
+    const response = await fetch('/api/tables', {
+        headers: {
+          Authorization: token ? `Bearer ${token}` : '',
+        },
           signal: controller.signal,
         });
         clearTimeout(timeoutId);
@@ -76,9 +80,13 @@ export default function QRCodesPage() {
         controller.abort();
       }, 10000); // 10 second timeout for QR generation
       
+      const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
       const response = await fetch('/api/qr/generate', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: token ? `Bearer ${token}` : '',
+        },
         body: JSON.stringify({ tableId }),
         signal: controller.signal,
       });

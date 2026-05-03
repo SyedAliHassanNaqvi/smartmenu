@@ -19,6 +19,11 @@ const orderItemSchema = new mongoose.Schema(
 
 const orderSchema = new mongoose.Schema<IOrder>(
   {
+    restaurantId: {
+      type: String,
+      required: true,
+      index: true, // Multi-tenancy: every order belongs to a restaurant
+    },
     tableId: {
       type: String,
       required: true,
@@ -65,5 +70,10 @@ const orderSchema = new mongoose.Schema<IOrder>(
   },
   { timestamps: true }
 );
+
+// Index for efficient multi-tenant queries
+orderSchema.index({ restaurantId: 1, tableId: 1 });
+orderSchema.index({ restaurantId: 1, status: 1 });
+orderSchema.index({ restaurantId: 1, createdAt: -1 });
 
 export const Order = mongoose.models.Order || mongoose.model<IOrder>("Order", orderSchema);

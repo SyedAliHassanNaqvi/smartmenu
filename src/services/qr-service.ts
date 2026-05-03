@@ -2,13 +2,13 @@ import QRCode from 'qrcode';
 
 /**
  * Generate QR code as Data URL for a table
- * @param tableId - Unique identifier for the table
+ * @param tablePath - Path for the table (restaurantId/tableNumber)
  * @returns QR code as Data URL string
  */
-export async function generateTableQR(tableId: string): Promise<string> {
+export async function generateTableQR(tablePath: string): Promise<string> {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const url = `${appUrl}/customer/${tableId}`;
+    const url = `${appUrl}/customer/${tablePath}`;
 
     const qrCodeUrl = await QRCode.toDataURL(url, {
       width: 300,
@@ -22,20 +22,20 @@ export async function generateTableQR(tableId: string): Promise<string> {
 
     return qrCodeUrl;
   } catch (error) {
-    console.error(`Failed to generate QR for table ${tableId}:`, error);
+    console.error(`Failed to generate QR for table ${tablePath}:`, error);
     throw new Error(`QR generation failed: ${error}`);
   }
 }
 
 /**
  * Generate QR code as Buffer (for server-side operations)
- * @param tableId - Unique identifier for the table
+ * @param tablePath - Path for the table (restaurantId/tableNumber)
  * @returns QR code as PNG buffer
  */
-export async function generateTableQRBuffer(tableId: string): Promise<Buffer> {
+export async function generateTableQRBuffer(tablePath: string): Promise<Buffer> {
   try {
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const url = `${appUrl}/customer/${tableId}`;
+    const url = `${appUrl}/customer/${tablePath}`;
 
     const qrCodeBuffer = await QRCode.toBuffer(url, {
       width: 300,
@@ -50,7 +50,7 @@ export async function generateTableQRBuffer(tableId: string): Promise<Buffer> {
 
     return qrCodeBuffer;
   } catch (error) {
-    console.error(`Failed to generate QR buffer for table ${tableId}:`, error);
+    console.error(`Failed to generate QR buffer for table ${tablePath}:`, error);
     throw new Error(`QR buffer generation failed: ${error}`);
   }
 }

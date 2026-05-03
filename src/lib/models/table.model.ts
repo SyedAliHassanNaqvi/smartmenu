@@ -3,10 +3,14 @@ import { ITable } from "@/types/models";
 
 const tableSchema = new mongoose.Schema<ITable>(
   {
+    restaurantId: {
+      type: String,
+      required: true,
+      index: true, // Multi-tenancy: every table belongs to a restaurant
+    },
     tableNumber: {
       type: Number,
       required: true,
-      unique: true,
     },
     capacity: {
       type: Number,
@@ -28,5 +32,9 @@ const tableSchema = new mongoose.Schema<ITable>(
   },
   { timestamps: true }
 );
+
+// Index for efficient multi-tenant queries
+tableSchema.index({ restaurantId: 1, tableNumber: 1 }, { unique: true }); // Table numbers unique per restaurant
+tableSchema.index({ restaurantId: 1, status: 1 });
 
 export const Table = mongoose.models.Table || mongoose.model<ITable>("Table", tableSchema);

@@ -7,36 +7,35 @@ interface ConnectionObject {
 const connection: ConnectionObject = {};
 
 async function dbConnect(): Promise<void> {
-  if (connection.isConnected) {
+  const db = mongoose.connection;
+
+  if (db.readyState === 1) {
+    connection.isConnected = db.readyState;
     console.log("Already connected to database");
     return;
   }
 
+  if (db.readyState === 2) {
+    console.log("Database connection already in progress");
+    return;
+  }
+
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI environment variable is not set");
+  }
+
   try {
-    if (!process.env.MONGODB_URI) {
-      throw new Error("MONGODB_URI environment variable is not set");
-    }
+    const connected = await mongoose.connect(process.env.MONGODB_URI, {
+      dbName: process.env.DB_NAME || "smartmenu",
+      maxPoolSize: 10,
+      serverSelectionTimeoutMS: 10000,
+      connectTimeoutMS: 10000,
+    });
 
-    // Create a promise that rejects after 10 seconds (tolerant of slow connections)
-    const timeoutPromise = new Promise<void>((_, reject) =>
-      setTimeout(() => reject(new Error("Database connection timeout")), 10000)
-    );
-
-    // Race between connection and timeout
-    await Promise.race([
-      mongoose.connect(process.env.MONGODB_URI, {
-        dbName: process.env.DB_NAME || "smartmenu",
-        maxPoolSize: 10,
-        serverSelectionTimeoutMS: 8000,
-      }),
-      timeoutPromise,
-    ]);
-
-    const db = mongoose.connection;
-    connection.isConnected = db.readyState;
+    connection.isConnected = connected.connection.readyState;
     console.log("Connected to database successfully");
   } catch (error) {
-    console.error("Error connecting to database", error);
+    console.error("Error connecting to database:", error);
     throw error;
   }
 }

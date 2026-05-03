@@ -1,45 +1,84 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { generateTableQR, isValidTableId } from '@/services/qr-service';
+import jwt from 'jsonwebtoken';
+import dbConnect from '@/lib/db';
+import { Table } from '@/lib/models/table.model';
+import { generateTableQR } from '@/services/qr-service';
 
 /**
  * POST /api/qr/generate
  * Generate a QR code for a table
- * 
+ *
  * Request body:
  * {
- *   "tableId": "table-1"
+ *   "tableId": "mongodb-table-id"
  * }
- * 
+ *
  * Response:
  * {
  *   "success": true,
- *   "tableId": "table-1",
+ *   "tableId": "mongodb-table-id",
  *   "qrCode": "data:image/png;base64,...",
- *   "url": "http://localhost:3000/customer/table-1"
+ *   "url": "http://localhost:3000/customer/restaurant-id/table-number"
  * }
  */
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
-    const { tableId } = body;
-
-    // Validate input
-    if (!tableId || !isValidTableId(tableId)) {
+    // Get token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { success: false, error: 'Invalid tableId provided' },
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const restaurantId = decoded.restaurantId;
+
+    if (!restaurantId) {
+      return NextResponse.json(
+        { success: false, error: 'Restaurant ID not found in token' },
         { status: 400 }
       );
     }
 
-    // Generate QR code
-    const qrCode = await generateTableQR(tableId);
+    const body = await request.json();
+    const { tableId } = body;
+
+    // Validate input
+    if (!tableId) {
+      return NextResponse.json(
+        { success: false, error: 'Table ID is required' },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    // Find table and verify it belongs to the restaurant
+    const table = await Table.findOne({ _id: tableId, restaurantId });
+    if (!table) {
+      return NextResponse.json(
+        { success: false, error: 'Table not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    // Generate QR code with restaurant context
+    const qrCode = await generateTableQR(`${restaurantId}/${table.tableNumber}`);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const url = `${appUrl}/customer/${tableId}`;
+    const url = `${appUrl}/customer/${restaurantId}/${table.tableNumber}`;
+
+    // Update table with QR code URL
+    table.qrCode = url;
+    await table.save();
 
     return NextResponse.json(
       {
         success: true,
-        tableId,
+        tableId: table._id.toString(),
+        tableNumber: table.tableNumber,
         qrCode,
         url,
         generatedAt: new Date().toISOString(),
@@ -59,29 +98,65 @@ export async function POST(request: NextRequest) {
 }
 
 /**
- * GET /api/qr/generate?tableId=table-1
+ * GET /api/qr/generate?tableId=mongodb-table-id
  * Generate a QR code for a table (GET method)
  */
 export async function GET(request: NextRequest) {
   try {
-    const { searchParams } = new URL(request.url);
-    const tableId = searchParams.get('tableId');
-
-    if (!tableId || !isValidTableId(tableId)) {
+    // Get token from Authorization header
+    const authHeader = request.headers.get('authorization');
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
       return NextResponse.json(
-        { success: false, error: 'Invalid tableId parameter' },
+        { success: false, error: 'Authentication required' },
+        { status: 401 }
+      );
+    }
+
+    const token = authHeader.substring(7);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const restaurantId = decoded.restaurantId;
+
+    if (!restaurantId) {
+      return NextResponse.json(
+        { success: false, error: 'Restaurant ID not found in token' },
         { status: 400 }
       );
     }
 
-    const qrCode = await generateTableQR(tableId);
+    const { searchParams } = new URL(request.url);
+    const tableId = searchParams.get('tableId');
+
+    if (!tableId) {
+      return NextResponse.json(
+        { success: false, error: 'Table ID parameter is required' },
+        { status: 400 }
+      );
+    }
+
+    await dbConnect();
+
+    // Find table and verify it belongs to the restaurant
+    const table = await Table.findOne({ _id: tableId, restaurantId });
+    if (!table) {
+      return NextResponse.json(
+        { success: false, error: 'Table not found or access denied' },
+        { status: 404 }
+      );
+    }
+
+    const qrCode = await generateTableQR(`${restaurantId}/${table.tableNumber}`);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-    const url = `${appUrl}/customer/${tableId}`;
+    const url = `${appUrl}/customer/${restaurantId}/${table.tableNumber}`;
+
+    // Update table with QR code URL
+    table.qrCode = url;
+    await table.save();
 
     return NextResponse.json(
       {
         success: true,
-        tableId,
+        tableId: table._id.toString(),
+        tableNumber: table.tableNumber,
         qrCode,
         url,
         generatedAt: new Date().toISOString(),

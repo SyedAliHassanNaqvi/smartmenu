@@ -16,6 +16,7 @@ export interface IProduct extends Document {
   calories?: number;
   rating: number;
   reviewCount: number;
+  restaurantId: string; // Multi-tenancy: every product belongs to a restaurant
   createdAt: Date;
   updatedAt: Date;
 }
@@ -31,6 +32,7 @@ export interface IOrderItem {
 
 export interface IOrder extends Document {
   _id: Types.ObjectId;
+  restaurantId: string; // Multi-tenancy: every order belongs to a restaurant
   tableId: string;
   tableNumber: number;
   items: IOrderItem[];
@@ -51,6 +53,7 @@ export interface IOrder extends Document {
 
 export interface ITable extends Document {
   _id: Types.ObjectId;
+  restaurantId: string; // Multi-tenancy: every table belongs to a restaurant
   tableNumber: number;
   capacity: number;
   location?: string;
@@ -68,6 +71,8 @@ export interface IUser extends Document {
   password: string;
   name: string;
   role: "admin" | "staff" | "customer";
+  restaurantId?: string; // Multi-tenancy: admin/staff users belong to a restaurant
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
