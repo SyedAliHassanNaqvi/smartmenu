@@ -1,30 +1,34 @@
 'use client';
 
-import { ReactNode, useEffect } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { ReactNode, useEffect, useState } from 'react';
+import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { useAuthStore } from '@/store/use-auth-store';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { user, isAuthenticated, logout, checkAuth } = useAuthStore();
-  const router = useRouter();
+  const { user, isAuthenticated, isHydrated, logout, checkAuth } = useAuthStore();
   const pathname = usePathname();
+  const [authChecked, setAuthChecked] = useState(false);
+
+  // Wait for hydration before checking auth
+  useEffect(() => {
+    if (!isHydrated) return;
+    
+    checkAuth().finally(() => setAuthChecked(true));
+  }, [isHydrated, checkAuth]);
 
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
-
-  useEffect(() => {
-    if (!isAuthenticated && pathname !== '/login') {
-      router.push('/login');
+    if (authChecked && !isAuthenticated && pathname !== '/login') {
+      window.location.href = '/login';
     }
-  }, [isAuthenticated, router, pathname]);
+  }, [authChecked, isAuthenticated, pathname]);
 
   const handleLogout = () => {
     logout();
-    router.push('/login');
+    window.location.href = '/login';
   };
 
-  if (!isAuthenticated) {
+  if (!authChecked || !isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
@@ -52,30 +56,30 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="space-y-2">
-          <a
+          <Link
             href="/admin/dashboard"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
             Dashboard
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/menu"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
             Menu Management
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/tables"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
             Tables
-          </a>
-          <a
+          </Link>
+          <Link
             href="/admin/qr-codes"
             className="block px-4 py-2 rounded hover:bg-gray-700 transition"
           >
             QR Codes
-          </a>
+          </Link>
         </nav>
 
         <div className="mt-8 pt-4 border-t border-gray-700">

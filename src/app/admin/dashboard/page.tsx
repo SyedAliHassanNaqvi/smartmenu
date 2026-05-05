@@ -1,25 +1,40 @@
-import { AdminTableMap } from '@/components/admin/AdminTableMap';
-import { AdminAnalytics } from '@/components/admin/AdminAnalytics';
+'use client';
 
-export default function Dashboard() {
+import { useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/use-auth-store';
+
+export default function AdminDashboardPage() {
+  const router = useRouter();
+  const { isAuthenticated, checkAuth, user } = useAuthStore();
+  const [checking, setChecking] = useState(true);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (containerRef.current) {
+      containerRef.current.style.opacity = '0';
+      containerRef.current.style.pointerEvents = 'none';
+    }
+
+    checkAuth().finally(() => setChecking(false));
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (checking) return;
+
+    if (!isAuthenticated) {
+      router.replace('/admin/login');
+    } else if (containerRef.current) {
+      containerRef.current.style.opacity = '1';
+      containerRef.current.style.pointerEvents = 'auto';
+      containerRef.current.style.transition = 'opacity 0.15s ease';
+    }
+  }, [checking, isAuthenticated, router]);
+
   return (
-    <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-2">Real-time restaurant management & analytics</p>
-      </div>
-
-      {/* Analytics Section */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">📊 Analytics</h2>
-        <AdminAnalytics />
-      </section>
-
-      {/* Table Management Section */}
-      <section>
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">🗺️ Table Status Map</h2>
-        <AdminTableMap />
-      </section>
+    <div ref={containerRef} className="min-h-screen p-8">
+      <h1 className="text-2xl font-bold">Welcome, {user?.name}</h1>
+      {/* rest of your dashboard */}
     </div>
   );
 }

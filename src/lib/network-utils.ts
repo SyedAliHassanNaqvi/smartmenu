@@ -24,7 +24,7 @@ export interface NetworkDiagnostics {
 }
 
 /**
- * Measure network latency by making a quick request to /api/tables
+ * Measure network latency by making a quick request to /api/ping
  * This helps determine if the connection is slow
  */
 export async function measureNetworkLatency(): Promise<NetworkDiagnostics> {
@@ -32,7 +32,7 @@ export async function measureNetworkLatency(): Promise<NetworkDiagnostics> {
   
   try {
     // Use a simple API endpoint to measure latency
-    const response = await fetch('/api/tables', {
+    const response = await fetch('/api/ping', {
       method: 'GET',
       signal: AbortSignal.timeout(3000), // 3 second timeout for diagnostic
     });

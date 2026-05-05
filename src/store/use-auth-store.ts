@@ -13,27 +13,26 @@ export interface AuthStore {
   user: User | null;
   token: string | null;
   isAuthenticated: boolean;
+  isHydrated: boolean;
   login: (token: string, user: User) => void;
   logout: () => void;
   setUser: (user: User | null) => void;
   checkAuth: () => Promise<void>;
 }
 
-// Authentication store with persistence
 export const useAuthStore = create<AuthStore>()(
   persist(
     (set, get) => ({
       user: null,
       token: null,
       isAuthenticated: false,
+      isHydrated: false,
 
       login: (token: string, user: User) => {
-        localStorage.setItem('auth-token', token);
         set({ user, token, isAuthenticated: true });
       },
 
       logout: () => {
-        localStorage.removeItem('auth-token');
         set({ user: null, token: null, isAuthenticated: false });
       },
 
@@ -42,11 +41,13 @@ export const useAuthStore = create<AuthStore>()(
       },
 
       checkAuth: async () => {
-        const token = get().token || localStorage.getItem('auth-token');
-        if (!token) return;
+        const token = get().token;
+        if (!token) {
+          set({ user: null, token: null, isAuthenticated: false });
+          return;
+        }
 
         try {
-          // Verify token with API
           const response = await fetch('/api/auth/verify', {
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -57,7 +58,6 @@ export const useAuthStore = create<AuthStore>()(
             const data = await response.json();
             set({ user: data.user, token, isAuthenticated: true });
           } else {
-            // Token invalid, logout
             get().logout();
           }
         } catch (error) {
@@ -73,6 +73,11 @@ export const useAuthStore = create<AuthStore>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state.isHydrated = true;
+        }
+      },
     }
   )
 );

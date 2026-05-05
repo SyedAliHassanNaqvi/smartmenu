@@ -3,291 +3,245 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { useAuthStore } from '@/store/use-auth-store';
 
-interface Table {
-  _id: string;
-  number: number;
-  occupancy?: number;
-}
-
-interface QRData {
+interface QRCodeData {
   tableId: string;
-  qrCode: string;
+  tableNumber: number;
+  capacity: number;
+  status: string;
   url: string;
+  qrCode: string;
   generatedAt: string;
 }
 
 export default function QRCodesPage() {
-  const [tables, setTables] = useState<Table[]>([]);
-  const [qrCodes, setQrCodes] = useState<Map<string, QRData>>(new Map());
+  const { token } = useAuthStore();
+  const [qrCodes, setQrCodes] = useState<QRCodeData[]>([]);
   const [loading, setLoading] = useState(true);
-  const [generating, setGenerating] = useState(false);
-  const [selectedTables, setSelectedTables] = useState<Set<string>>(new Set());
+  const [generating, setGenerating] = useState<Set<string>>(new Set());
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
 
-  // Fetch all tables
-  useEffect(() => {
-    console.log('QR Codes page mounted, starting table fetch...');
-    const fetchTables = async () => {
-      try {
-        console.log('Attempting to fetch tables from /api/tables');
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => {
-          console.log('Fetch timeout triggered (5s) - aborting request');
-          controller.abort();
-        }, 5000); // Reduced to 5 second timeout for faster UX
-        
-const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
-    const response = await fetch('/api/tables', {
-        headers: {
-          Authorization: token ? `Bearer ${token}` : '',
-        },
-          signal: controller.signal,
-        });
-        clearTimeout(timeoutId);
-        console.log('Fetch response received:', response.status);
-        
-        if (!response.ok) throw new Error('Failed to fetch tables');
-        const data = await response.json();
-        console.log('Tables data received:', data);
-        setTables(data);
-      } catch (error) {
-        console.error('Error fetching tables:', error);
-        console.log('Using mock data as fallback');
-        // Mock data for testing
-        setTables([
-          { _id: '1', number: 1 },
-          { _id: '2', number: 2 },
-          { _id: '3', number: 3 },
-          { _id: '4', number: 4 },
-          { _id: '5', number: 5 },
-          { _id: '6', number: 6 },
-        ]);
-      } finally {
-        console.log('Setting loading to false');
-        setLoading(false);
-      }
-    };
+  // Fetch all QR codes from database
+  const fetchQRCodes = async () => {
+    if (!token) return;
 
-    fetchTables();
-  }, []);
-
-  // Generate QR for a single table
-  const generateQRForTable = async (tableId: string) => {
     try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => {
-        console.log(`QR generation timeout for table ${tableId} - aborting`);
-        controller.abort();
-      }, 10000); // 10 second timeout for QR generation
+      setLoading(true);
+      setError('');
+      const response = await fetch('/api/qr/codes', {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch QR codes');
+      const data = await response.json();
+      setQrCodes(data);
+    } catch (err: any) {
+      console.error('Error fetching QR codes:', err);
+      setError(err.message || 'Failed to load QR codes');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchQRCodes();
+  }, [token]);
+
+  // Generate QR code for a specific table
+  const generateQRForTable = async (tableId: string) => {
+    if (!token) return;
+
+    try {
+      setGenerating(prev => new Set(prev).add(tableId));
+      setError('');
       
-      const token = typeof window !== 'undefined' ? localStorage.getItem('auth-token') : null;
       const response = await fetch('/api/qr/generate', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: token ? `Bearer ${token}` : '',
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({ tableId }),
-        signal: controller.signal,
       });
-      clearTimeout(timeoutId);
 
-      if (!response.ok) throw new Error('Failed to generate QR');
-      const data = await response.json();
+      if (!response.ok) throw new Error('Failed to generate QR code');
       
-      setQrCodes(prev => new Map(prev).set(tableId, data));
-    } catch (error) {
-      console.error(`Error generating QR for table ${tableId}:`, error);
-      alert(`Failed to generate QR for table ${tableId}`);
+      setSuccess('QR code generated successfully');
+      await fetchQRCodes();
+    } catch (err: any) {
+      console.error('Error generating QR:', err);
+      setError(err.message || 'Failed to generate QR code');
+    } finally {
+      setGenerating(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(tableId);
+        return newSet;
+      });
     }
   };
 
-  // Generate QR codes for all selected tables
-  const generateAllQRs = async () => {
-    setGenerating(true);
-    const tablesToGenerate = tables.map(t => t._id);
-    
-    for (const tableId of tablesToGenerate) {
-      await generateQRForTable(tableId);
+  // Generate QR codes for all tables
+  const generateAllQRCodes = async () => {
+    for (const qrCode of qrCodes) {
+      if (!qrCode.qrCode) {
+        await generateQRForTable(qrCode.tableId);
+      }
     }
-    
-    setGenerating(false);
+    setSuccess('All QR codes generated successfully');
   };
 
-  // Download QR code
-  const downloadQR = (qrData: QRData) => {
+  const downloadQRCode = (qrCode: string, tableNumber: number) => {
     const link = document.createElement('a');
-    link.href = qrData.qrCode;
-    link.download = `table-${qrData.tableId}-qr.png`;
+    link.href = qrCode;
+    link.download = `table-${tableNumber}-qr.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Print QR codes
-  const printQRs = () => {
+  const printQRCode = (qrCode: string, tableNumber: number) => {
     const printWindow = window.open('', '_blank');
-    if (!printWindow) {
-      alert('Failed to open print window');
-      return;
-    }
+    if (!printWindow) return;
 
-    const qrArray = Array.from(qrCodes.values());
-    let html = `
+    printWindow.document.write(`
       <html>
         <head>
-          <title>SmartMenu - Table QR Codes</title>
+          <title>Print Table ${tableNumber} QR Code</title>
           <style>
-            body { font-family: Arial, sans-serif; margin: 20px; }
-            .page-break { page-break-before: always; }
-            .qr-item {
-              display: inline-block;
-              text-align: center;
-              margin: 20px;
-              border: 1px solid #ddd;
-              padding: 15px;
-              border-radius: 8px;
-              break-inside: avoid;
-              page-break-inside: avoid;
-            }
-            .qr-item img { max-width: 300px; margin: 10px 0; }
-            .qr-item h3 { margin: 10px 0; font-size: 18px; }
-            .qr-item p { margin: 5px 0; font-size: 12px; color: #666; }
-            .grid {
-              display: grid;
-              grid-template-columns: repeat(2, 1fr);
-              gap: 20px;
-            }
+            body { margin: 0; display: flex; align-items: center; justify-content: center; height: 100vh; }
+            img { max-width: 100%; max-height: 100%; }
           </style>
         </head>
         <body>
-          <h1>SmartMenu - Table QR Codes</h1>
-          <p>Generated on: ${new Date().toLocaleString()}</p>
-          <div class="grid">
-    `;
-
-    qrArray.forEach((qr, index) => {
-      html += `
-        <div class="qr-item">
-          <h3>Table ${qr.tableId}</h3>
-          <img src="${qr.qrCode}" alt="Table ${qr.tableId} QR Code" />
-          <p>Scan to access menu</p>
-          <p style="font-size: 10px; color: #999;">${qr.url}</p>
-        </div>
-      `;
-    });
-
-    html += `
-          </div>
+          <img src="${qrCode}" alt="Table ${tableNumber} QR Code" />
         </body>
       </html>
-    `;
-
-    printWindow.document.write(html);
+    `);
     printWindow.document.close();
+    printWindow.focus();
     printWindow.print();
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
-          <p>Loading tables...</p>
-        </div>
-      </div>
-    );
-  }
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'available':
+        return 'bg-green-100 text-green-800';
+      case 'occupied':
+        return 'bg-blue-100 text-blue-800';
+      case 'reserved':
+        return 'bg-yellow-100 text-yellow-800';
+      case 'maintenance':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
+    }
+  };
 
   return (
-    <div className="p-6">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold mb-2">Table QR Codes</h1>
-        <p className="text-gray-600">Generate and manage QR codes for all tables</p>
-      </div>
-
-      {/* Control Buttons */}
-      <div className="mb-6 flex gap-3">
-        <Button
-          onClick={generateAllQRs}
-          disabled={generating || tables.length === 0}
-          className="bg-indigo-600 hover:bg-indigo-700"
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">QR Code Management</h1>
+          <p className="text-gray-600 mt-2">Generate and manage QR codes for your tables</p>
+        </div>
+        <Button 
+          onClick={generateAllQRCodes}
+          disabled={loading || generating.size > 0}
         >
-          {generating ? 'Generating...' : 'Generate All QRs'}
-        </Button>
-        <Button
-          onClick={printQRs}
-          disabled={qrCodes.size === 0}
-          variant="outline"
-        >
-          Print All ({qrCodes.size})
+          Generate All QR Codes
         </Button>
       </div>
 
-      {/* Tables Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {tables.map(table => {
-          const qrData = qrCodes.get(table._id);
+      {/* Messages */}
+      {success && (
+        <div className="p-4 bg-green-50 border border-green-200 rounded-md">
+          <p className="text-green-800">{success}</p>
+        </div>
+      )}
+      {error && (
+        <div className="p-4 bg-red-50 border border-red-200 rounded-md">
+          <p className="text-red-800">{error}</p>
+        </div>
+      )}
 
-          return (
-            <Card key={table._id} className="p-6">
-              <h2 className="text-xl font-bold mb-4">Table {table.number}</h2>
+      {qrCodes.length === 0 ? (
+        <div className="p-6 bg-white rounded-lg shadow-sm">
+          <p className="text-gray-600">No tables found. Please make sure your tables are set up in the restaurant admin.</p>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {qrCodes.map((item) => (
+            <Card key={item.tableId} className="p-6">
+              <div className="flex justify-between items-start mb-4">
+                <div>
+                  <h2 className="text-xl font-bold text-gray-900">Table {item.tableNumber}</h2>
+                  <p className="text-sm text-gray-500">Capacity: {item.capacity}</p>
+                </div>
+                <Badge className={getStatusColor(item.status)}>{item.status}</Badge>
+              </div>
 
-              {qrData ? (
+              {item.url ? (
                 <>
                   <div className="mb-4 flex justify-center bg-gray-50 p-4 rounded">
                     <img
-                      src={qrData.qrCode}
-                      alt={`Table ${table.number} QR Code`}
+                      src={item.qrCode}
+                      alt={`Table ${item.tableNumber} QR Code`}
                       className="w-48 h-48"
                     />
                   </div>
-                  <p className="text-xs text-gray-500 mb-4 break-all">
-                    {qrData.url}
-                  </p>
-                  <div className="flex gap-2">
+                  <p className="text-xs text-gray-500 mb-4 break-all">{item.url}</p>
+                  <div className="flex flex-col gap-2 sm:flex-row">
                     <Button
-                      onClick={() => downloadQR(qrData)}
                       size="sm"
                       variant="outline"
-                      className="flex-1"
+                      onClick={() => downloadQRCode(item.qrCode, item.tableNumber)}
+                      className="w-full text-white"
                     >
                       Download
                     </Button>
                     <Button
-                      onClick={() => generateQRForTable(table._id)}
                       size="sm"
                       variant="outline"
-                      className="flex-1"
+                      onClick={() => printQRCode(item.qrCode, item.tableNumber)}
+                      className="w-full text-white"
                     >
-                      Regenerate
+                      Print
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => generateQRForTable(item.tableId)}
+                      disabled={generating.has(item.tableId)}
+                      className="w-full text-white"
+                    >
+                      {generating.has(item.tableId) ? 'Updating...' : 'Regenerate'}
                     </Button>
                   </div>
                 </>
               ) : (
                 <>
                   <div className="mb-4 flex items-center justify-center bg-gray-100 p-12 rounded h-48">
-                    <p className="text-gray-500">QR not generated</p>
+                    <p className="text-gray-500">QR not generated yet</p>
                   </div>
                   <Button
-                    onClick={() => generateQRForTable(table._id)}
-                    disabled={generating}
+                    onClick={() => generateQRForTable(item.tableId)}
+                    disabled={generating.has(item.tableId)}
                     size="sm"
                     className="w-full"
                   >
-                    Generate QR
+                    {generating.has(item.tableId) ? 'Generating...' : 'Generate QR'}
                   </Button>
                 </>
               )}
             </Card>
-          );
-        })}
-      </div>
-
-      {tables.length === 0 && (
-        <Card className="p-12 text-center">
-          <p className="text-gray-600">No tables found. Please create tables first.</p>
-        </Card>
+          ))}
+        </div>
       )}
     </div>
   );

@@ -115,7 +115,7 @@ async function main() {
   console.log('Restaurant name:', restaurant.name);
   console.log('Admin email:', user.email);
   console.log('Admin password: DemoPass123!');
-  console.log('Login URL: http://localhost:3000/admin/login');
+  console.log('Login URL: http://localhost:3000/login');
 
   await mongoose.disconnect();
 }

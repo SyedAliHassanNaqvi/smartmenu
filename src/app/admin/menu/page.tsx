@@ -52,10 +52,10 @@ export default function MenuManagement() {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-sm space-x-2">
-                  <Button size="sm" variant="outline">
+                  <Button size="sm" variant="outline" className='text-white'>
                     Edit
                   </Button>
-                  <Button size="sm" variant="outline" className="text-red-600">
+                  <Button size="sm" variant="outline" className="text-red-600 ">
                     Delete
                   </Button>
                 </td>
