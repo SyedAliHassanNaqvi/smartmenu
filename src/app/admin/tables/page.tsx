@@ -41,32 +41,33 @@ export default function Tables() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
+  const fetchTables = () => {
+    if (!token) return;
+
+    return fetch('/api/tables', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to fetch tables');
+        return response.json();
+      })
+      .then((data) => {
+        setTables(data);
+        setError('');
+      })
+      .catch((err) => {
+        console.error('Error fetching tables:', err);
+        setError('Failed to load tables');
+      })
+      .finally(() => setLoading(false));
+  };
+
   // Fetch tables on mount
   useEffect(() => {
     fetchTables();
   }, []);
-
-  const fetchTables = async () => {
-    if (!token) return;
-    
-    try {
-      setLoading(true);
-      const response = await fetch('/api/tables', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch tables');
-      const data = await response.json();
-      setTables(data);
-    } catch (err) {
-      console.error('Error fetching tables:', err);
-      setError('Failed to load tables');
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleOpenModal = (table?: Table) => {
     if (table) {
@@ -140,8 +141,8 @@ export default function Tables() {
       setSuccess(editingId ? 'Table updated successfully' : 'Table added successfully');
       handleCloseModal();
       await fetchTables();
-    } catch (err: any) {
-      setError(err.message || 'An error occurred');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
     } finally {
       setSubmitting(false);
     }
@@ -162,8 +163,8 @@ export default function Tables() {
       
       setSuccess('Table deleted successfully');
       await fetchTables();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete table');
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to delete table');
     }
   };
 
@@ -188,7 +189,7 @@ export default function Tables() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Table Management</h1>
-          <p className="text-gray-600 mt-2">Manage your restaurant's tables</p>
+          <p className="text-gray-600 mt-2">Manage your restaurant&apos;s tables</p>
         </div>
         <Button onClick={() => handleOpenModal()}>Add Table</Button>
       </div>
@@ -263,7 +264,7 @@ export default function Tables() {
                   <select
                     value={formData.status}
                     onChange={(e) =>
-                      setFormData(prev => ({ ...prev, status: e.target.value as any }))
+                      setFormData(prev => ({ ...prev, status: e.target.value as FormData['status'] }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black"
                   >

@@ -1,43 +1,38 @@
 import mongoose from "mongoose";
+import { serverEnv } from "./env";
 
-interface ConnectionObject {
-  isConnected?: number;
-}
+const connectionOptions = {
+  dbName: serverEnv.DB_NAME,
+  maxPoolSize: 10,
+  serverSelectionTimeoutMS: 10_000,
+  connectTimeoutMS: 10_000,
+};
 
-const connection: ConnectionObject = {};
+const globalForMongoose = globalThis as unknown as {
+  mongooseConnection?: mongoose.Mongoose;
+  mongoosePromise?: Promise<mongoose.Mongoose>;
+};
 
-async function dbConnect(): Promise<void> {
-  const db = mongoose.connection;
-
-  if (db.readyState === 1) {
-    connection.isConnected = db.readyState;
-    console.log("Already connected to database");
-    return;
+export async function dbConnect(): Promise<mongoose.Mongoose> {
+  if (globalForMongoose.mongooseConnection) {
+    return globalForMongoose.mongooseConnection;
   }
 
-  if (db.readyState === 2) {
-    console.log("Database connection already in progress");
-    return;
-  }
-
-  if (!process.env.MONGODB_URI) {
-    throw new Error("MONGODB_URI environment variable is not set");
+  if (!globalForMongoose.mongoosePromise) {
+    globalForMongoose.mongoosePromise = mongoose.connect(
+      serverEnv.MONGODB_URI,
+      connectionOptions,
+    );
   }
 
   try {
-    const connected = await mongoose.connect(process.env.MONGODB_URI, {
-      dbName: process.env.DB_NAME || "smartmenu",
-      maxPoolSize: 10,
-      serverSelectionTimeoutMS: 10000,
-      connectTimeoutMS: 10000,
-    });
-
-    connection.isConnected = connected.connection.readyState;
-    console.log("Connected to database successfully");
-  } catch (error) {
-    console.error("Error connecting to database:", error);
-    throw error;
+    globalForMongoose.mongooseConnection = await globalForMongoose.mongoosePromise;
+  } catch (err) {
+    // Critical: clear the cached promise on failure so the NEXT call
+    // retries fresh instead of re-awaiting this same dead rejected promise.
+    globalForMongoose.mongoosePromise = undefined;
+    throw err;
   }
-}
 
-export default dbConnect;
+  return globalForMongoose.mongooseConnection;
+}

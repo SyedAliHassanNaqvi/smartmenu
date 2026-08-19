@@ -40,7 +40,7 @@ export async function generateTableQRBuffer(tablePath: string): Promise<Buffer> 
     const qrCodeBuffer = await QRCode.toBuffer(url, {
       width: 300,
       margin: 2,
-      type: 'png' as any,
+      type: 'png',
       color: {
         dark: '#000000',
         light: '#FFFFFF',

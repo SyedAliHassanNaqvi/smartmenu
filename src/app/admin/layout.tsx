@@ -4,6 +4,7 @@ import { ReactNode, useEffect, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { useAuthStore } from '@/store/use-auth-store';
+import { adminNavItems } from '@/config/navigation';
 
 export default function AdminLayout({ children }: { children: ReactNode }) {
   const { user, isAuthenticated, isHydrated, logout, checkAuth } = useAuthStore();
@@ -56,30 +57,15 @@ export default function AdminLayout({ children }: { children: ReactNode }) {
         </div>
 
         <nav className="space-y-2">
-          <Link
-            href="/admin/dashboard"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Dashboard
-          </Link>
-          <Link
-            href="/admin/menu"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Menu Management
-          </Link>
-          <Link
-            href="/admin/tables"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            Tables
-          </Link>
-          <Link
-            href="/admin/qr-codes"
-            className="block px-4 py-2 rounded hover:bg-gray-700 transition"
-          >
-            QR Codes
-          </Link>
+          {adminNavItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className="block px-4 py-2 rounded hover:bg-gray-700 transition"
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="mt-8 pt-4 border-t border-gray-700">

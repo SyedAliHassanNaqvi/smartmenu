@@ -6,47 +6,6 @@ import { useSpeech } from '@/hooks/use-speech';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 
-// A-Frame type definitions for TypeScript
-declare global {
-  namespace JSX {
-    interface IntrinsicElements {
-      'a-scene': AFrameSceneProps;
-      'a-assets': Record<string, any>;
-      'a-asset-item': AFrameAssetProps;
-      'a-entity': AFrameEntityProps;
-      'a-light': AFrameLightProps;
-    }
-  }
-}
-
-interface AFrameSceneProps {
-  embedded?: boolean;
-  children?: React.ReactNode;
-  [key: string]: any;
-}
-
-interface AFrameAssetProps {
-  id: string;
-  src: string;
-  [key: string]: any;
-}
-
-interface AFrameEntityProps {
-  'gltf-model'?: string;
-  position?: string;
-  rotation?: string;
-  scale?: string;
-  children?: React.ReactNode;
-  [key: string]: any;
-}
-
-interface AFrameLightProps {
-  type?: string;
-  position?: string;
-  intensity?: number;
-  [key: string]: any;
-}
-
 /**
  * AR Mascot Component with Adaptive Volume
  * Uses A-Frame for 3D scene, Web Audio API for ambient noise detection
@@ -141,7 +100,7 @@ export function ARMascot() {
 
         {/* Mascot Message */}
         <div className="bg-white rounded-lg p-4 mb-4 border-l-4 border-purple-500">
-          <p className="text-gray-800 italic">"{mascotMessage}"</p>
+          <p className="text-gray-800 italic">&ldquo;{mascotMessage}&rdquo;</p>
         </div>
 
         {/* Audio Analysis Display */}

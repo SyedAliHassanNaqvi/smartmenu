@@ -25,27 +25,27 @@ export default function QRCodesPage() {
   const [success, setSuccess] = useState('');
 
   // Fetch all QR codes from database
-  const fetchQRCodes = async () => {
+  const fetchQRCodes = () => {
     if (!token) return;
 
-    try {
-      setLoading(true);
-      setError('');
-      const response = await fetch('/api/qr/codes', {
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to fetch QR codes');
-      const data = await response.json();
-      setQrCodes(data);
-    } catch (err: any) {
-      console.error('Error fetching QR codes:', err);
-      setError(err.message || 'Failed to load QR codes');
-    } finally {
-      setLoading(false);
-    }
+    return fetch('/api/qr/codes', {
+      headers: {
+        'Authorization': `Bearer ${token}`,
+      },
+    })
+      .then((response) => {
+        if (!response.ok) throw new Error('Failed to fetch QR codes');
+        return response.json();
+      })
+      .then((data) => {
+        setQrCodes(data);
+        setError('');
+      })
+      .catch((err) => {
+        console.error('Error fetching QR codes:', err);
+        setError(err instanceof Error ? err.message : 'Failed to load QR codes');
+      })
+      .finally(() => setLoading(false));
   };
 
   useEffect(() => {
@@ -73,9 +73,9 @@ export default function QRCodesPage() {
       
       setSuccess('QR code generated successfully');
       await fetchQRCodes();
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error generating QR:', err);
-      setError(err.message || 'Failed to generate QR code');
+      setError(err instanceof Error ? err.message : 'Failed to generate QR code');
     } finally {
       setGenerating(prev => {
         const newSet = new Set(prev);

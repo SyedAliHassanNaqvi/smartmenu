@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
     if (checking) return;
 
     if (!isAuthenticated) {
-      router.replace('/admin/login');
+      router.replace('/login');
     } else if (containerRef.current) {
       containerRef.current.style.opacity = '1';
       containerRef.current.style.pointerEvents = 'auto';

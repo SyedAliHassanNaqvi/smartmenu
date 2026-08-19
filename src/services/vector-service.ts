@@ -58,7 +58,7 @@ export class VectorSearchService {
    * Generate embeddings for a text query
    * In production: Use OpenAI or Gemini embeddings API
    */
-  static async generateEmbeddings(text: string): Promise<number[]> {
+  static async generateEmbeddings(_text: string): Promise<number[]> {
     try {
       // Mock embeddings - in production use actual API
       const mockEmbedding = Array(768)

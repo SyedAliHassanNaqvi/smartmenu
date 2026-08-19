@@ -1,70 +1,59 @@
-import { NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import { User } from '@/lib/models/user.model';
-import jwt from 'jsonwebtoken';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { User } from "@/lib/models/user.model";
+import { loginSchema } from "@/lib/validations/auth";
+import { signToken } from "@/lib/auth";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
+import { setAuthCookie } from "@/lib/session";
 
 /**
  * POST /api/auth/login
- * Authenticate admin user
+ * Authenticate a user and issue a JWT (returned in the body and set as an
+ * httpOnly cookie for the proxy).
  */
-export async function POST(request: Request) {
-  try {
-    const { email, password } = await request.json();
-
-    if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email and password are required' },
-        { status: 400 }
-      );
-    }
+export async function POST(request: NextRequest) {
+  return withErrorHandling(async () => {
+    const body = await request.json();
+    const { email, password } = loginSchema.parse(body);
 
     await dbConnect();
 
     const user = await User.findOne({ email, isActive: true });
-
     if (!user) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
+      throw new ApiError(401, "Invalid credentials");
     }
 
     const isValidPassword = await user.comparePassword(password);
     if (!isValidPassword) {
-      return NextResponse.json(
-        { error: 'Invalid credentials' },
-        { status: 401 }
-      );
+      throw new ApiError(401, "Invalid credentials");
     }
 
-    // Generate JWT token
-    const token = jwt.sign(
+    user.lastLogin = new Date();
+    await user.save();
+
+    const token = signToken({
+      userId: user._id.toString(),
+      email: user.email,
+      restaurantId: user.restaurantId,
+      role: user.role,
+    });
+
+    const response = ok(
       {
-        userId: user._id.toString(),
-        email: user.email,
-        restaurantId: user.restaurantId,
-        role: user.role,
+        success: true,
+        token,
+        user: {
+          id: user._id.toString(),
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          restaurantId: user.restaurantId,
+        },
       },
-      process.env.JWT_SECRET || 'fallback-secret',
-      { expiresIn: '7d' }
+      200,
     );
 
-    return NextResponse.json({
-      success: true,
-      token,
-      user: {
-        id: user._id.toString(),
-        email: user.email,
-        name: user.name,
-        role: user.role,
-        restaurantId: user.restaurantId,
-      }
-    });
-  } catch (error: any) {
-    console.error('Error logging in:', error);
-    return NextResponse.json(
-      { error: 'Login failed' },
-      { status: 500 }
-    );
-  }
+    return setAuthCookie(response, token);
+  });
 }

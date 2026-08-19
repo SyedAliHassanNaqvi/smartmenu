@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -26,7 +27,6 @@ export default function AdminLoginPage() {
   useEffect(() => {
     // Wait for hydration before checking auth
     if (!isHydrated) {
-      setChecking(true);
       return;
     }
 
@@ -46,7 +46,7 @@ export default function AdminLoginPage() {
       }
       setChecking(false);
     });
-  }, [isHydrated, checkAuth]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [isHydrated, checkAuth]);
 
   useEffect(() => {
     if (!checking && isAuthenticated) {
@@ -132,10 +132,10 @@ export default function AdminLoginPage() {
 
           <div className="mt-6 text-center">
             <p className="text-sm text-muted-foreground">
-              Don't have an account?{' '}
-              <a href="/" className="text-primary hover:underline">
+              Don&apos;t have an account?{' '}
+              <Link href="/signup" className="text-primary hover:underline">
                 Sign up for SmartMenu
-              </a>
+              </Link>
             </p>
           </div>
         </CardContent>

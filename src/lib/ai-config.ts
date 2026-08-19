@@ -94,13 +94,13 @@ Be precise and concise.`;
     }
   }
 
-  private static async callOpenAI(prompt: string, systemRole?: string): Promise<string> {
+  private static async callOpenAI(prompt: string, _systemRole?: string): Promise<string> {
     // Mock implementation - integrate with actual OpenAI API
     console.log("OpenAI call with prompt:", prompt);
     return "Based on your preferences, I recommend the Light Quinoa Salad. It's perfect for a hot day with fresh ingredients and low calories.";
   }
 
-  private static async callGemini(prompt: string, systemRole?: string): Promise<string> {
+  private static async callGemini(prompt: string, _systemRole?: string): Promise<string> {
     // Mock implementation - integrate with actual Gemini API
     console.log("Gemini call with prompt:", prompt);
     return "I recommend the Margherita Pizza - it has excellent flavor balance and uses premium ingredients.";

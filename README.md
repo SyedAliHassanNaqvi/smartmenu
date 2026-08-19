@@ -1,4 +1,4 @@
-# 🍽️ SmartMenu - AI-Powered Restaurant Ordering with WebAR
+﻿# ðŸ½ï¸ SmartMenu - AI-Powered Restaurant Ordering with WebAR
 
 > An intelligent dining & WebAR ecosystem featuring AI-powered recommendations, real-time order management, and gamified customer engagement.
 
@@ -7,60 +7,60 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)]()
 [![Next.js](https://img.shields.io/badge/Next.js-16.2-black)]()
 
-## 🎯 Quick Navigation
+## ðŸŽ¯ Quick Navigation
 
 **New here?** Start with one of these:
 
-- 🚀 **[Quick Start Guide](./QUICK_REFERENCE.md)** - Get running in 5 minutes
-- 📖 **[Documentation Index](./DOCUMENTATION_INDEX.md)** - Find what you need
-- 📋 **[At a Glance](./AT_A_GLANCE.md)** - Project overview
-- ✅ **[Completion Report](./COMPLETION_REPORT.md)** - What was built
+- ðŸš€ **[Quick Start Guide](./docs/QUICK_REFERENCE.md)** - Get running in 5 minutes
+- ðŸ“– **[Documentation Index](./docs/DOCUMENTATION_INDEX.md)** - Find what you need
+- ðŸ“‹ **[At a Glance](./docs/AT_A_GLANCE.md)** - Project overview
+- âœ… **[Completion Report](./docs/COMPLETION_REPORT.md)** - What was built
 
 ---
 
-## ✨ Features
+## âœ¨ Features
 
-### 🤖 AI AR Mascot with Adaptive Volume
+### ðŸ¤– AI AR Mascot with Adaptive Volume
 
 - A-Frame 3D model with animated responses
 - Web Audio API for ambient noise analysis
 - RMS-based volume calculation
 - Speech synthesis that adapts to environment
-- [Learn more →](./DETAILED_SPECIFICATION.md#1-ai-ar-mascot-with-adaptive-volume)
+- [Learn more â†’](./docs/DETAILED_SPECIFICATION.md#1-ai-ar-mascot-with-adaptive-volume)
 
-### 📸 Vision-Based Dish Recognition
+### ðŸ“¸ Vision-Based Dish Recognition
 
 - Camera capture from mobile device
 - Gemini 1.5 Flash AI analysis
 - Automatic nutrition extraction
 - Suggested pairings
-- [Learn more →](./DETAILED_SPECIFICATION.md#2-vision-based-dish-recognition)
+- [Learn more â†’](./docs/DETAILED_SPECIFICATION.md#2-vision-based-dish-recognition)
 
-### 🔍 Semantic Search & Virtual Sommelier
+### ðŸ” Semantic Search & Virtual Sommelier
 
 - 768-dimensional vector embeddings
 - MongoDB Atlas vector search
 - LLM-powered recommendations
 - Analyzes product pros/cons for personalization
-- [Learn more →](./DETAILED_SPECIFICATION.md#3-semantic-search--virtual-sommelier)
+- [Learn more â†’](./docs/DETAILED_SPECIFICATION.md#3-semantic-search--virtual-sommelier)
 
-### 🎮 Gamified Loyalty System
+### ðŸŽ® Gamified Loyalty System
 
 - 30-second ingredient catching game
 - Automatic discount generation
 - Haptic feedback for engagement
 - Score-based rewards (score/10 = discount %)
-- [Learn more →](./DETAILED_SPECIFICATION.md#4-gamified-loyalty-system)
+- [Learn more â†’](./docs/DETAILED_SPECIFICATION.md#4-gamified-loyalty-system)
 
-### 📊 Admin Dashboard with Real-time Updates
+### ðŸ“Š Admin Dashboard with Real-time Updates
 
 - Live table occupancy map
 - Analytics with KPIs
 - AR-to-order conversion tracking
 - Peak hours analysis
-- [Learn more →](./DETAILED_SPECIFICATION.md#5-admin-real-time-table-map)
+- [Learn more â†’](./docs/DETAILED_SPECIFICATION.md#5-admin-real-time-table-map)
 
-### 📱 PWA & Offline Support
+### ðŸ“± PWA & Offline Support
 
 - Service Worker for offline caching
 - Installable web app
@@ -69,7 +69,7 @@
 
 ---
 
-## 🚀 Getting Started
+## ðŸš€ Getting Started
 
 ### 1. Prerequisites
 
@@ -117,7 +117,7 @@ npm run dev
 
 ---
 
-## 🏗️ Tech Stack
+## ðŸ—ï¸ Tech Stack
 
 ### Frontend
 
@@ -150,24 +150,24 @@ npm run dev
 
 ---
 
-## 📚 Documentation
+## ðŸ“š Documentation
 
 Comprehensive guides for every aspect of the project:
 
 | Document                                                 | Purpose                   | Read Time |
 | -------------------------------------------------------- | ------------------------- | --------- |
-| [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)               | Setup, testing, debugging | 5 min     |
-| [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)           | API setup, deployment     | 10 min    |
-| [DETAILED_SPECIFICATION.md](./DETAILED_SPECIFICATION.md) | Feature specifications    | 20 min    |
-| [PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)               | Complete inventory        | 15 min    |
-| [ARCHITECTURE.md](./ARCHITECTURE.md)                     | System design & flows     | 15 min    |
-| [AT_A_GLANCE.md](./AT_A_GLANCE.md)                       | Quick overview            | 3 min     |
-| [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)       | Navigation guide          | 2 min     |
-| [COMPLETION_REPORT.md](./COMPLETION_REPORT.md)           | Project status            | 10 min    |
+| [QUICK_REFERENCE.md](./docs/QUICK_REFERENCE.md)               | Setup, testing, debugging | 5 min     |
+| [INTEGRATION_GUIDE.md](./docs/INTEGRATION_GUIDE.md)           | API setup, deployment     | 10 min    |
+| [DETAILED_SPECIFICATION.md](./docs/DETAILED_SPECIFICATION.md) | Feature specifications    | 20 min    |
+| [PROJECT_SUMMARY.md](./docs/PROJECT_SUMMARY.md)               | Complete inventory        | 15 min    |
+| [ARCHITECTURE.md](./docs/ARCHITECTURE.md)                     | System design & flows     | 15 min    |
+| [AT_A_GLANCE.md](./docs/AT_A_GLANCE.md)                       | Quick overview            | 3 min     |
+| [DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)       | Navigation guide          | 2 min     |
+| [COMPLETION_REPORT.md](./docs/COMPLETION_REPORT.md)           | Project status            | 10 min    |
 
 ---
 
-## 🧪 Testing Features
+## ðŸ§ª Testing Features
 
 ### Test AR Mascot
 
@@ -198,42 +198,42 @@ Comprehensive guides for every aspect of the project:
 
 ---
 
-## 📊 Project Structure
+## ðŸ“Š Project Structure
 
 ```
 smartmenu/
-├── src/
-│   ├── app/                    # Next.js pages & routes
-│   │   ├── (admin)/           # Admin section
-│   │   ├── (customer)/        # Customer section
-│   │   └── api/               # API endpoints
-│   ├── components/            # React components
-│   │   ├── customer/          # AR components
-│   │   ├── admin/             # Dashboard components
-│   │   └── ui/                # Shadcn UI library
-│   ├── services/              # Business logic
-│   │   ├── vector-service.ts  # Semantic search
-│   │   └── vision-service.ts  # Vision recognition
-│   ├── lib/
-│   │   ├── ai-config.ts       # LLM configuration
-│   │   ├── websocket.ts       # Real-time updates
-│   │   └── validations/       # Zod schemas
-│   ├── store/                 # Zustand stores
-│   ├── hooks/                 # Custom hooks
-│   └── types/                 # TypeScript types
-├── public/                    # Static assets
-│   ├── sw.js                  # Service Worker
-│   └── manifest.json          # PWA manifest
-└── docs/                      # Documentation
-    ├── README.md
-    ├── QUICK_REFERENCE.md
-    ├── INTEGRATION_GUIDE.md
-    └── [5 more guides]
+â”œâ”€â”€ src/
+â”‚   â”œâ”€â”€ app/                    # Next.js pages & routes
+â”‚   â”‚   â”œâ”€â”€ (admin)/           # Admin section
+â”‚   â”‚   â”œâ”€â”€ (customer)/        # Customer section
+â”‚   â”‚   â””â”€â”€ api/               # API endpoints
+â”‚   â”œâ”€â”€ components/            # React components
+â”‚   â”‚   â”œâ”€â”€ customer/          # AR components
+â”‚   â”‚   â”œâ”€â”€ admin/             # Dashboard components
+â”‚   â”‚   â””â”€â”€ ui/                # Shadcn UI library
+â”‚   â”œâ”€â”€ services/              # Business logic
+â”‚   â”‚   â”œâ”€â”€ vector-service.ts  # Semantic search
+â”‚   â”‚   â””â”€â”€ vision-service.ts  # Vision recognition
+â”‚   â”œâ”€â”€ lib/
+â”‚   â”‚   â”œâ”€â”€ ai-config.ts       # LLM configuration
+â”‚   â”‚   â”œâ”€â”€ websocket.ts       # Real-time updates
+â”‚   â”‚   â””â”€â”€ validations/       # Zod schemas
+â”‚   â”œâ”€â”€ store/                 # Zustand stores
+â”‚   â”œâ”€â”€ hooks/                 # Custom hooks
+â”‚   â””â”€â”€ types/                 # TypeScript types
+â”œâ”€â”€ public/                    # Static assets
+â”‚   â”œâ”€â”€ sw.js                  # Service Worker
+â”‚   â””â”€â”€ manifest.json          # PWA manifest
+â””â”€â”€ docs/                      # Documentation
+    â”œâ”€â”€ README.md
+    â”œâ”€â”€ QUICK_REFERENCE.md
+    â”œâ”€â”€ INTEGRATION_GUIDE.md
+    â””â”€â”€ [5 more guides]
 ```
 
 ---
 
-## 🔌 API Endpoints
+## ðŸ”Œ API Endpoints
 
 ### AI & Search
 
@@ -255,7 +255,7 @@ smartmenu/
 
 ---
 
-## 📈 Performance
+## ðŸ“ˆ Performance
 
 ### Metrics
 
@@ -272,7 +272,7 @@ smartmenu/
 
 ---
 
-## 🚀 Deployment
+## ðŸš€ Deployment
 
 ### Vercel (Recommended)
 
@@ -296,7 +296,7 @@ npm run start
 
 ---
 
-## 🐛 Troubleshooting
+## ðŸ› Troubleshooting
 
 **Issue:** "Cannot find module '@/...'"
 
@@ -314,34 +314,34 @@ npm run start
 
 - Solution: Check WebSocket URL, verify browser console
 
-→ [Full troubleshooting guide](./QUICK_REFERENCE.md#-debugging-tips)
+â†’ [Full troubleshooting guide](./docs/QUICK_REFERENCE.md#-debugging-tips)
 
 ---
 
-## 🎓 Features Implemented
+## ðŸŽ“ Features Implemented
 
 | Feature            | Status      | Docs                                                                     |
 | ------------------ | ----------- | ------------------------------------------------------------------------ |
-| AR Mascot          | ✅ Complete | [Spec](./DETAILED_SPECIFICATION.md#1-ai-ar-mascot-with-adaptive-volume)  |
-| Vision Recognition | ✅ Complete | [Spec](./DETAILED_SPECIFICATION.md#2-vision-based-dish-recognition)      |
-| Semantic Search    | ✅ Complete | [Spec](./DETAILED_SPECIFICATION.md#3-semantic-search--virtual-sommelier) |
-| Gamified Loyalty   | ✅ Complete | [Spec](./DETAILED_SPECIFICATION.md#4-gamified-loyalty-system)            |
-| Real-time Admin    | ✅ Complete | [Spec](./DETAILED_SPECIFICATION.md#5-admin-real-time-table-map)          |
-| Analytics          | ✅ Complete | [Spec](./DETAILED_SPECIFICATION.md#6-advanced-analytics-dashboard)       |
+| AR Mascot          | âœ… Complete | [Spec](./docs/DETAILED_SPECIFICATION.md#1-ai-ar-mascot-with-adaptive-volume)  |
+| Vision Recognition | âœ… Complete | [Spec](./docs/DETAILED_SPECIFICATION.md#2-vision-based-dish-recognition)      |
+| Semantic Search    | âœ… Complete | [Spec](./docs/DETAILED_SPECIFICATION.md#3-semantic-search--virtual-sommelier) |
+| Gamified Loyalty   | âœ… Complete | [Spec](./docs/DETAILED_SPECIFICATION.md#4-gamified-loyalty-system)            |
+| Real-time Admin    | âœ… Complete | [Spec](./docs/DETAILED_SPECIFICATION.md#5-admin-real-time-table-map)          |
+| Analytics          | âœ… Complete | [Spec](./docs/DETAILED_SPECIFICATION.md#6-advanced-analytics-dashboard)       |
 
 ---
 
-## 📞 Support & Resources
+## ðŸ“ž Support & Resources
 
-- 🆘 **Stuck?** → [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
-- 📖 **Documentation** → [DOCUMENTATION_INDEX.md](./DOCUMENTATION_INDEX.md)
-- 🏗️ **Architecture** → [ARCHITECTURE.md](./ARCHITECTURE.md)
-- 🔌 **API Help** → [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)
-- ✅ **Status** → [COMPLETION_REPORT.md](./COMPLETION_REPORT.md)
+- ðŸ†˜ **Stuck?** â†’ [QUICK_REFERENCE.md](./docs/QUICK_REFERENCE.md)
+- ðŸ“– **Documentation** â†’ [DOCUMENTATION_INDEX.md](./docs/DOCUMENTATION_INDEX.md)
+- ðŸ—ï¸ **Architecture** â†’ [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
+- ðŸ”Œ **API Help** â†’ [INTEGRATION_GUIDE.md](./docs/INTEGRATION_GUIDE.md)
+- âœ… **Status** â†’ [COMPLETION_REPORT.md](./docs/COMPLETION_REPORT.md)
 
 ---
 
-## 🏆 Project Stats
+## ðŸ† Project Stats
 
 - **Total Files:** 75+
 - **Components:** 25+
@@ -349,27 +349,27 @@ npm run start
 - **Services:** 3
 - **Documentation:** 2,850+ lines
 - **Type Coverage:** 100%
-- **Status:** ✅ Production Ready
+- **Status:** âœ… Production Ready
 
 ---
 
-## 📝 License
+## ðŸ“ License
 
 This project is part of a Final Year Project (FYP). All rights reserved.
 
 ---
 
-## 🎯 Next Steps
+## ðŸŽ¯ Next Steps
 
-1. **Clone & Setup** → Follow [QUICK_REFERENCE.md](./QUICK_REFERENCE.md)
-2. **Configure APIs** → See [INTEGRATION_GUIDE.md](./INTEGRATION_GUIDE.md)
-3. **Test Features** → Run `npm run dev`
-4. **Deploy** → Use [INTEGRATION_GUIDE.md - Deployment](./INTEGRATION_GUIDE.md#deployment)
+1. **Clone & Setup** â†’ Follow [QUICK_REFERENCE.md](./docs/QUICK_REFERENCE.md)
+2. **Configure APIs** â†’ See [INTEGRATION_GUIDE.md](./docs/INTEGRATION_GUIDE.md)
+3. **Test Features** â†’ Run `npm run dev`
+4. **Deploy** â†’ Use [INTEGRATION_GUIDE.md - Deployment](./docs/INTEGRATION_GUIDE.md#deployment)
 
 ---
 
 **Last Updated:** April 24, 2026  
 **Version:** 1.0.0-beta  
-**Status:** ✅ **COMPLETE & READY FOR PRODUCTION**
+**Status:** âœ… **COMPLETE & READY FOR PRODUCTION**
 
-🎉 **Happy building with SmartMenu!**
+ðŸŽ‰ **Happy building with SmartMenu!**

@@ -23,6 +23,21 @@ export interface NetworkDiagnostics {
   effectiveType?: string;
 }
 
+interface NetworkInformation {
+  type?: string;
+  effectiveType?: string;
+}
+
+interface NavigatorWithConnection extends Navigator {
+  connection?: NetworkInformation;
+  mozConnection?: NetworkInformation;
+}
+
+function getConnection(): NetworkInformation | undefined {
+  const nav = navigator as NavigatorWithConnection;
+  return nav.connection || nav.mozConnection;
+}
+
 /**
  * Measure network latency by making a quick request to /api/ping
  * This helps determine if the connection is slow
@@ -32,23 +47,23 @@ export async function measureNetworkLatency(): Promise<NetworkDiagnostics> {
   
   try {
     // Use a simple API endpoint to measure latency
-    const response = await fetch('/api/ping', {
+    await fetch('/api/ping', {
       method: 'GET',
       signal: AbortSignal.timeout(3000), // 3 second timeout for diagnostic
     });
-    
+
     const latency = performance.now() - startTime;
-    
+
     // Get connection type from navigator API (if available)
-    const connection = (navigator as any).connection || (navigator as any).mozConnection;
-    
+    const connection = getConnection();
+
     return {
       latency: Math.round(latency),
       isSlowConnection: latency > 2000, // Consider >2s as slow
       connectionType: connection?.type,
       effectiveType: connection?.effectiveType, // '4g', '3g', '2g', 'slow-2g'
     };
-  } catch (error) {
+  } catch {
     return {
       latency: 9999,
       isSlowConnection: true,

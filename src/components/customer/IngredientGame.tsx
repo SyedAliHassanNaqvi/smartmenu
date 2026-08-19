@@ -29,17 +29,29 @@ export function IngredientGame() {
     '🍆', // Eggplant
   ];
 
+  const endGame = () => {
+    setGameActive(false);
+    setGameOver(true);
+
+    // Calculate discount based on score
+    const discountPercentage = Math.floor(score / 10); // 1% per 10 points
+    if (discountPercentage > 0) {
+      const discountCode = `GAME${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+      applyDiscount(discountCode, discountPercentage);
+    }
+  };
+
   // Game timer
   useEffect(() => {
-    if (!gameActive || timeLeft === 0) return;
+    if (!gameActive || timeLeft <= 0) return;
 
     const timer = setTimeout(() => {
-      setTimeLeft(timeLeft - 1);
+      if (timeLeft === 1) {
+        endGame();
+      } else {
+        setTimeLeft(timeLeft - 1);
+      }
     }, 1000);
-
-    if (timeLeft === 0) {
-      endGame();
-    }
 
     return () => clearTimeout(timer);
   }, [gameActive, timeLeft]);
@@ -62,18 +74,6 @@ export function IngredientGame() {
     // Haptic feedback if available
     if ('vibrate' in navigator) {
       navigator.vibrate(50);
-    }
-  };
-
-  const endGame = () => {
-    setGameActive(false);
-    setGameOver(true);
-
-    // Calculate discount based on score
-    const discountPercentage = Math.floor(score / 10); // 1% per 10 points
-    if (discountPercentage > 0) {
-      const discountCode = `GAME${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-      applyDiscount(discountCode, discountPercentage);
     }
   };
 

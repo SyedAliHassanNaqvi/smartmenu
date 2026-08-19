@@ -9,65 +9,75 @@ import { Button } from '@/components/ui/button';
  * Admin Table Map Component
  * Real-time table status visualization with WebSocket support
  */
-export function AdminTableMap() {
-  const [tables, setTables] = useState<any[]>([]);
-  const [filter, setFilter] = useState<'all' | 'available' | 'occupied' | 'cleaning'>('all');
 
-  // Mock table data
-  const mockTables = [
-    {
-      id: '1',
-      number: 1,
-      capacity: 4,
-      status: 'available',
-      guests: 0,
-      orderTotal: 0,
-    },
-    {
-      id: '2',
-      number: 2,
-      capacity: 6,
-      status: 'occupied',
-      guests: 4,
-      orderTotal: 45.5,
-    },
-    {
-      id: '3',
-      number: 3,
-      capacity: 2,
-      status: 'available',
-      guests: 0,
-      orderTotal: 0,
-    },
-    {
-      id: '4',
-      number: 4,
-      capacity: 4,
-      status: 'cleaning',
-      guests: 0,
-      orderTotal: 0,
-    },
-    {
-      id: '5',
-      number: 5,
-      capacity: 8,
-      status: 'occupied',
-      guests: 6,
-      orderTotal: 89.99,
-    },
-    {
-      id: '6',
-      number: 6,
-      capacity: 4,
-      status: 'available',
-      guests: 0,
-      orderTotal: 0,
-    },
-  ];
+type TableStatus = 'available' | 'occupied' | 'cleaning' | 'maintenance';
+
+interface AdminTable {
+  id: string;
+  number: number;
+  capacity: number;
+  status: TableStatus;
+  guests: number;
+  orderTotal: number;
+}
+
+// Mock table data (module-scope so it stays stable across renders)
+const mockTables: AdminTable[] = [
+  {
+    id: '1',
+    number: 1,
+    capacity: 4,
+    status: 'available',
+    guests: 0,
+    orderTotal: 0,
+  },
+  {
+    id: '2',
+    number: 2,
+    capacity: 6,
+    status: 'occupied',
+    guests: 4,
+    orderTotal: 45.5,
+  },
+  {
+    id: '3',
+    number: 3,
+    capacity: 2,
+    status: 'available',
+    guests: 0,
+    orderTotal: 0,
+  },
+  {
+    id: '4',
+    number: 4,
+    capacity: 4,
+    status: 'cleaning',
+    guests: 0,
+    orderTotal: 0,
+  },
+  {
+    id: '5',
+    number: 5,
+    capacity: 8,
+    status: 'occupied',
+    guests: 6,
+    orderTotal: 89.99,
+  },
+  {
+    id: '6',
+    number: 6,
+    capacity: 4,
+    status: 'available',
+    guests: 0,
+    orderTotal: 0,
+  },
+];
+
+export function AdminTableMap() {
+  const [tables, setTables] = useState<AdminTable[]>(mockTables);
+  const [filter, setFilter] = useState<'all' | TableStatus>('all');
 
   useEffect(() => {
-    setTables(mockTables);
-
     // In production: Connect to WebSocket for real-time updates
     // const ws = new WebSocket('wss://your-server.com/ws/tables');
     // ws.onmessage = (event) => {

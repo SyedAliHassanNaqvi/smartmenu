@@ -1,4 +1,4 @@
-import PayButton from "@/components/ui/PayButton";
+import PayButton from "@/components/shared/PayButton";
 
 
 export default function CheckoutPage() {
@@ -8,7 +8,12 @@ export default function CheckoutPage() {
       <p className="mb-6 text-gray-600">Test Nexi XPay Sandbox Payment</p>
       
       {/* €15.50 = 1550 cents */}
-      <PayButton amount={1550} />
+      <PayButton
+        amount={1550}
+        restaurantName="Demo Restaurant"
+        ownerEmail="demo@restaurant.com"
+        ownerName="Demo Owner"
+      />
     </main>
   );
 }

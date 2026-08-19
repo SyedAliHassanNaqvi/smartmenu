@@ -36,11 +36,7 @@ function SetupForm() {
   });
 
   useEffect(() => {
-    if (!token) {
-      setError('No invitation token provided');
-      setLoading(false);
-      return;
-    }
+    if (!token) return;
 
     // Validate invitation token
     fetch(`/api/auth/validate-invitation?token=${token}`)
@@ -111,6 +107,24 @@ function SetupForm() {
     }
   };
 
+  if (!token) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md p-6">
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Invalid Invitation</h2>
+            <p className="text-muted-foreground mb-4">
+              No invitation token provided.
+            </p>
+            <Button onClick={() => router.push('/')}>
+              Go Home
+            </Button>
+          </div>
+        </Card>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -146,7 +160,7 @@ function SetupForm() {
         <CardHeader>
           <CardTitle>Complete Your Restaurant Setup</CardTitle>
           <CardDescription>
-            Welcome! You've been invited to set up {invitation?.restaurantName}.
+            Welcome! You&apos;ve been invited to set up {invitation?.restaurantName}.
             Please complete your account details below.
           </CardDescription>
         </CardHeader>

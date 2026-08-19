@@ -1,53 +1,42 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import dbConnect from '@/lib/db';
-import { User } from '@/lib/models/user.model';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { User } from "@/lib/models/user.model";
+import { verifyToken } from "@/lib/auth";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
+import { setAuthCookie } from "@/lib/session";
 
 /**
  * GET /api/auth/verify
- * Verify JWT token and return user data
+ * Verify a JWT and return fresh user data. Also refreshes the session cookie.
  */
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'No token provided' },
-        { status: 401 }
-      );
+  return withErrorHandling(async () => {
+    const authHeader = request.headers.get("authorization");
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      throw new ApiError(401, "No token provided");
     }
 
-    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
-
-    // Verify JWT token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
+    const token = authHeader.slice("Bearer ".length);
+    const decoded = verifyToken(token);
 
     await dbConnect();
 
-    // Get fresh user data from database
-    const user = await User.findById(decoded.userId).select('-password');
-
+    const user = await User.findById(decoded.userId).select("-password");
     if (!user || !user.isActive) {
-      return NextResponse.json(
-        { error: 'User not found or inactive' },
-        { status: 401 }
-      );
+      throw new ApiError(401, "User not found or inactive");
     }
 
-    return NextResponse.json({
+    const response = ok({
       user: {
         id: user._id.toString(),
         email: user.email,
         name: user.name,
         role: user.role,
         restaurantId: user.restaurantId,
-      }
+      },
     });
-  } catch (error: any) {
-    console.error('Token verification error:', error);
-    return NextResponse.json(
-      { error: 'Invalid token' },
-      { status: 401 }
-    );
-  }
+
+    return setAuthCookie(response, token);
+  });
 }

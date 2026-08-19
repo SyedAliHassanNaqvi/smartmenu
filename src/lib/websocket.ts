@@ -3,17 +3,28 @@
  * Supports Pusher for production, or native WebSocket for development
  */
 
+export interface TableUpdate {
+  tableId: string;
+  [key: string]: unknown;
+}
+
+export interface OrderUpdate {
+  orderId: string;
+  [key: string]: unknown;
+}
+
 export interface WebSocketMessage {
   type: 'table-update' | 'order-update' | 'notification' | 'analytics';
-  data: any;
+  data: unknown;
   timestamp: Date;
 }
+
+type Listener = (data: unknown) => void;
 
 export class WebSocketManager {
   private static instance: WebSocketManager;
   private socket: WebSocket | null = null;
-  private pusher: any = null;
-  private listeners: Map<string, Function[]> = new Map();
+  private listeners: Map<string, Listener[]> = new Map();
 
   private constructor() {}
 
@@ -74,10 +85,11 @@ export class WebSocketManager {
   /**
    * Subscribe to real-time table updates
    */
-  subscribeToTableUpdates(tableId: string, callback: (data: any) => void): void {
-    this.on('table-update', (data: any) => {
-      if (data.tableId === tableId) {
-        callback(data);
+  subscribeToTableUpdates(tableId: string, callback: (data: TableUpdate) => void): void {
+    this.on('table-update', (data: unknown) => {
+      const update = data as TableUpdate;
+      if (update.tableId === tableId) {
+        callback(update);
       }
     });
   }
@@ -85,10 +97,11 @@ export class WebSocketManager {
   /**
    * Subscribe to order updates
    */
-  subscribeToOrderUpdates(orderId: string, callback: (data: any) => void): void {
-    this.on('order-update', (data: any) => {
-      if (data.orderId === orderId) {
-        callback(data);
+  subscribeToOrderUpdates(orderId: string, callback: (data: OrderUpdate) => void): void {
+    this.on('order-update', (data: unknown) => {
+      const update = data as OrderUpdate;
+      if (update.orderId === orderId) {
+        callback(update);
       }
     });
   }
@@ -105,7 +118,7 @@ export class WebSocketManager {
   /**
    * Register event listener
    */
-  on(event: string, callback: Function): void {
+  on(event: string, callback: Listener): void {
     if (!this.listeners.has(event)) {
       this.listeners.set(event, []);
     }
@@ -115,7 +128,7 @@ export class WebSocketManager {
   /**
    * Emit event to all listeners
    */
-  private emit(event: string, data: any): void {
+  private emit(event: string, data: unknown): void {
     const callbacks = this.listeners.get(event) || [];
     callbacks.forEach((callback) => callback(data));
   }
@@ -138,10 +151,10 @@ export function useWebSocket() {
 
   return {
     connect: (url?: string) => manager.connect(url),
-    subscribeToTableUpdates: (tableId: string, callback: Function) =>
-      manager.subscribeToTableUpdates(tableId, callback as any),
-    subscribeToOrderUpdates: (orderId: string, callback: Function) =>
-      manager.subscribeToOrderUpdates(orderId, callback as any),
+    subscribeToTableUpdates: (tableId: string, callback: (data: TableUpdate) => void) =>
+      manager.subscribeToTableUpdates(tableId, callback),
+    subscribeToOrderUpdates: (orderId: string, callback: (data: OrderUpdate) => void) =>
+      manager.subscribeToOrderUpdates(orderId, callback),
     send: (message: WebSocketMessage) => manager.send(message),
     disconnect: () => manager.disconnect(),
   };

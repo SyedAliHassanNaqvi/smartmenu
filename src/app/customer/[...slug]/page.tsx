@@ -41,27 +41,24 @@ export default function CustomerView({
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
-  const { items, itemCount, total, addToCart, removeFromCart } = useCart();
+  const { itemCount, addToCart } = useCart();
+
+  const isLegacyUrl = slug.length === 1;
+  const isInvalidUrl = slug.length !== 1 && slug.length !== 2;
 
   useEffect(() => {
-    // Handle different URL formats
-    let restaurantId: string;
-    let tableNumber: string;
-
-    if (slug.length === 1) {
+    if (isLegacyUrl) {
       // Legacy format: /customer/[tableId]
-      // For backward compatibility, assume tableId contains restaurant info
-      // For now, redirect to a migration page or show an error
+      // For backward compatibility, redirect to a migration page.
       router.replace('/migration?legacyTableId=' + slug[0]);
       return;
-    } else if (slug.length === 2) {
-      // New format: /customer/[restaurantId]/[tableNumber]
-      [restaurantId, tableNumber] = slug;
-    } else {
-      setError('Invalid URL format');
-      setLoading(false);
-      return;
     }
+
+    if (isInvalidUrl) return;
+
+    // New format: /customer/[restaurantId]/[tableNumber]
+    const restaurantId = slug[0];
+    const tableNumber = slug[1];
 
     // Fetch table info and menu items
     const fetchData = async () => {
@@ -89,7 +86,7 @@ export default function CustomerView({
     };
 
     fetchData();
-  }, [slug, router]);
+  }, [slug, router, isLegacyUrl, isInvalidUrl]);
 
   const handleAddToCart = (item: MenuItem) => {
     addToCart(item._id, item.name, item.price, 1);
@@ -104,6 +101,22 @@ export default function CustomerView({
     };
     return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
   };
+
+  if (isInvalidUrl) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h2 className="text-xl font-semibold text-red-600 mb-2">Invalid URL</h2>
+          <p className="text-muted-foreground mb-4">
+            The link you followed is invalid. Please check the QR code or table link.
+          </p>
+          <Button onClick={() => router.push('/')}>
+            Go Home
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   if (loading) {
     return (

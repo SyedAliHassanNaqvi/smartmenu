@@ -1,111 +1,58 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import dbConnect from '@/lib/db';
-import { Table } from '@/lib/models/table.model';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { Table } from "@/lib/models/table.model";
+import { createTableSchema } from "@/lib/validations/table";
+import { getAuthRestaurantId } from "@/lib/auth";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
 
 /**
  * GET /api/tables
- * Fetch all tables for the authenticated restaurant
+ * List all tables for the authenticated restaurant.
  */
 export async function GET(request: NextRequest) {
-  try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    const restaurantId = decoded.restaurantId;
-
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Restaurant ID not found in token' },
-        { status: 400 }
-      );
-    }
+  return withErrorHandling(async () => {
+    const restaurantId = getAuthRestaurantId(request);
 
     await dbConnect();
 
     const tables = await Table.find({ restaurantId })
       .sort({ tableNumber: 1 })
-      .select('_id tableNumber status capacity qrCode lastOccupiedAt createdAt');
+      .select("_id tableNumber status capacity qrCode createdAt");
 
-    return NextResponse.json(tables);
-  } catch (error: any) {
-    console.error('Error fetching tables:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch tables' },
-      { status: 500 }
-    );
-  }
+    return ok(tables);
+  });
 }
 
 /**
  * POST /api/tables
- * Create a new table for the authenticated restaurant
+ * Create a table for the authenticated restaurant.
  */
 export async function POST(request: NextRequest) {
-  try {
-    // Get token from Authorization header
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+  return withErrorHandling(async () => {
+    const restaurantId = getAuthRestaurantId(request);
 
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    const restaurantId = decoded.restaurantId;
-
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Restaurant ID not found in token' },
-        { status: 400 }
-      );
-    }
-
-    const { tableNumber, capacity = 4 } = await request.json();
-
-    if (!tableNumber || tableNumber < 1) {
-      return NextResponse.json(
-        { error: 'Valid table number is required' },
-        { status: 400 }
-      );
-    }
+    const body = await request.json();
+    const validatedData = createTableSchema.parse(body);
 
     await dbConnect();
 
-    // Check if table number already exists for this restaurant
-    const existingTable = await Table.findOne({ restaurantId, tableNumber });
+    const existingTable = await Table.findOne({
+      restaurantId,
+      tableNumber: validatedData.tableNumber,
+    });
     if (existingTable) {
-      return NextResponse.json(
-        { error: 'Table number already exists' },
-        { status: 409 }
-      );
+      throw new ApiError(409, "Table number already exists");
     }
 
     const table = new Table({
+      ...validatedData,
       restaurantId,
-      tableNumber,
-      capacity,
-      status: 'available',
+      status: "available",
     });
 
     await table.save();
 
-    return NextResponse.json(table, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating table:', error);
-    return NextResponse.json(
-      { error: 'Failed to create table' },
-      { status: 500 }
-    );
-  }
+    return ok(table, 201);
+  });
 }

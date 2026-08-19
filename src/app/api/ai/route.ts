@@ -1,41 +1,36 @@
-import { NextRequest, NextResponse } from "next/server";
+import type { NextRequest } from "next/server";
 import { chatRequestSchema } from "@/lib/validations/ai";
 import { VectorSearchService } from "@/services/vector-service";
-import { AIService } from "@/lib/ai-config";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
 
 /**
- * AI Agent API
- * Semantic Search + Virtual Sommelier Integration
- * 
- * POST /api/ai - Chat and recommendations
- * GET /api/ai?q=query - Semantic search
+ * POST /api/ai
+ * Chat + recommendations: embed the query, vector-search the menu, then
+ * produce a Virtual Sommelier recommendation.
  */
-
 export async function POST(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const body = await request.json();
     const validatedData = chatRequestSchema.parse(body);
 
-    // Generate embeddings for the user query
     const queryEmbeddings = await VectorSearchService.generateEmbeddings(
-      validatedData.message
+      validatedData.message,
     );
 
-    // Perform vector search in MongoDB Atlas
     const searchResults = await VectorSearchService.semanticSearch(
       validatedData.message,
       queryEmbeddings,
-      5
+      5,
     );
 
-    // Get Virtual Sommelier recommendation
-    const recommendation = await VectorSearchService.getVirtualSommelierRecommendation(
-      validatedData.message,
-      searchResults
-    );
+    const recommendation =
+      await VectorSearchService.getVirtualSommelierRecommendation(
+        validatedData.message,
+        searchResults,
+      );
 
-    // AI response with context
-    const aiResponse = {
+    return ok({
       conversationId: validatedData.conversationId || `conv_${Date.now()}`,
       response: recommendation.reasoning,
       recommendation: recommendation.recommendation,
@@ -43,50 +38,31 @@ export async function POST(request: NextRequest) {
       similarProducts: searchResults.slice(1, 3),
       confidence: 0.92,
       timestamp: new Date(),
-    };
-
-    return NextResponse.json(aiResponse, { status: 200 });
-  } catch (error: any) {
-    console.error("AI API error:", error);
-    return NextResponse.json(
-      { error: error.message || "Failed to process AI request" },
-      { status: 500 }
-    );
-  }
+    });
+  });
 }
 
 /**
- * Semantic Search Endpoint
+ * GET /api/ai?q=query&limit=5
+ * Semantic search over the menu.
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const { searchParams } = new URL(request.url);
     const query = searchParams.get("q");
-    const maxResults = parseInt(searchParams.get("limit") || "5");
+    const maxResults = parseInt(searchParams.get("limit") || "5", 10);
 
     if (!query) {
-      return NextResponse.json(
-        { error: "Query parameter 'q' is required" },
-        { status: 400 }
-      );
+      throw new ApiError(400, "Query parameter 'q' is required");
     }
 
-    // Generate embeddings
     const embeddings = await VectorSearchService.generateEmbeddings(query);
-
-    // Vector search
     const results = await VectorSearchService.semanticSearch(
       query,
       embeddings,
-      maxResults
+      maxResults,
     );
 
-    return NextResponse.json({ results, total: results.length }, { status: 200 });
-  } catch (error: any) {
-    console.error("Search error:", error);
-    return NextResponse.json(
-      { error: error.message || "Search failed" },
-      { status: 500 }
-    );
-  }
+    return ok({ results, total: results.length });
+  });
 }

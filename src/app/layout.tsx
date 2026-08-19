@@ -2,7 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
 import { RootProvider } from "./providers";
-import { NetworkStatus } from "@/components/ui/network-status";
+import { NetworkStatus } from "@/components/shared/network-status";
 
 const inter = Inter({ subsets: ["latin"] });
 
