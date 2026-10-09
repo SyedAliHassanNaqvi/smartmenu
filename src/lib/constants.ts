@@ -1,7 +1,7 @@
 /**
  * Global application constants shared across the codebase.
  */
-export const APP_NAME = "SmartMenu";
+export const APP_NAME = "Vision Dine";
 export const DEFAULT_LOCALE = "en";
 export const DEFAULT_CURRENCY = "EUR";
 export const DEFAULT_TIMEZONE = "Europe/Rome";
@@ -11,7 +11,7 @@ export const DEFAULT_TAX_RATE = 0.22;
  * Name of the httpOnly auth cookie used by the server (proxy + API routes).
  * Client-side auth state lives in zustand's persisted store.
  */
-export const AUTH_COOKIE_NAME = "smartmenu_token";
+export const AUTH_COOKIE_NAME = "visiondine_token";
 
 /**
  * How long an admin session stays valid before the user must re-authenticate.

@@ -1,10 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/use-auth-store';
+import { queryKeys } from '@/lib/query-keys';
+import { apiFetch } from '@/lib/api-client';
 
 interface QRCodeData {
   tableId: string;
@@ -18,78 +21,48 @@ interface QRCodeData {
 
 export default function QRCodesPage() {
   const { token } = useAuthStore();
-  const [qrCodes, setQrCodes] = useState<QRCodeData[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
   const [generating, setGenerating] = useState<Set<string>>(new Set());
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  // Fetch all QR codes from database
-  const fetchQRCodes = () => {
-    if (!token) return;
-
-    return fetch('/api/qr/codes', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to fetch QR codes');
-        return response.json();
-      })
-      .then((data) => {
-        setQrCodes(data);
-        setError('');
-      })
-      .catch((err) => {
-        console.error('Error fetching QR codes:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load QR codes');
-      })
-      .finally(() => setLoading(false));
-  };
-
-  useEffect(() => {
-    fetchQRCodes();
-  }, [token]);
+  const { data: qrCodes = [], isLoading: loading, error: fetchError } = useQuery({
+    queryKey: queryKeys.qrCodes.all,
+    queryFn: () => apiFetch<QRCodeData[]>('/api/qr/codes', { token: token || undefined }),
+    enabled: !!token,
+  });
 
   // Generate QR code for a specific table
-  const generateQRForTable = async (tableId: string) => {
-    if (!token) return;
-
-    try {
-      setGenerating(prev => new Set(prev).add(tableId));
-      setError('');
-      
-      const response = await fetch('/api/qr/generate', {
+  const generateQRForTable = useMutation({
+    mutationFn: (tableId: string) =>
+      apiFetch<QRCodeData>('/api/qr/generate', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ tableId }),
-      });
-
-      if (!response.ok) throw new Error('Failed to generate QR code');
-      
+        token,
+        body: { tableId },
+      }),
+    onMutate: (tableId) => {
+      setGenerating((prev) => new Set(prev).add(tableId));
+      setError('');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.qrCodes.all });
       setSuccess('QR code generated successfully');
-      await fetchQRCodes();
-    } catch (err) {
-      console.error('Error generating QR:', err);
-      setError(err instanceof Error ? err.message : 'Failed to generate QR code');
-    } finally {
-      setGenerating(prev => {
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : 'Failed to generate QR code'),
+    onSettled: (_, __, tableId) => {
+      setGenerating((prev) => {
         const newSet = new Set(prev);
         newSet.delete(tableId);
         return newSet;
       });
-    }
-  };
+    },
+  });
 
   // Generate QR codes for all tables
-  const generateAllQRCodes = async () => {
+  const generateAllQRCodes = () => {
     for (const qrCode of qrCodes) {
       if (!qrCode.qrCode) {
-        await generateQRForTable(qrCode.tableId);
+        generateQRForTable.mutate(qrCode.tableId);
       }
     }
     setSuccess('All QR codes generated successfully');
@@ -150,7 +123,7 @@ export default function QRCodesPage() {
           <h1 className="text-3xl font-bold text-gray-900">QR Code Management</h1>
           <p className="text-gray-600 mt-2">Generate and manage QR codes for your tables</p>
         </div>
-        <Button 
+        <Button
           onClick={generateAllQRCodes}
           disabled={loading || generating.size > 0}
         >
@@ -164,9 +137,9 @@ export default function QRCodesPage() {
           <p className="text-green-800">{success}</p>
         </div>
       )}
-      {error && (
+      {(fetchError || error) && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800">{fetchError instanceof Error ? fetchError.message : error}</p>
         </div>
       )}
 
@@ -201,7 +174,7 @@ export default function QRCodesPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => downloadQRCode(item.qrCode, item.tableNumber)}
-                      className="w-full text-white"
+                      className="w-full"
                     >
                       Download
                     </Button>
@@ -209,16 +182,16 @@ export default function QRCodesPage() {
                       size="sm"
                       variant="outline"
                       onClick={() => printQRCode(item.qrCode, item.tableNumber)}
-                      className="w-full text-white"
+                      className="w-full"
                     >
                       Print
                     </Button>
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => generateQRForTable(item.tableId)}
+                      onClick={() => generateQRForTable.mutate(item.tableId)}
                       disabled={generating.has(item.tableId)}
-                      className="w-full text-white"
+                      className="w-full"
                     >
                       {generating.has(item.tableId) ? 'Updating...' : 'Regenerate'}
                     </Button>
@@ -230,7 +203,7 @@ export default function QRCodesPage() {
                     <p className="text-gray-500">QR not generated yet</p>
                   </div>
                   <Button
-                    onClick={() => generateQRForTable(item.tableId)}
+                    onClick={() => generateQRForTable.mutate(item.tableId)}
                     disabled={generating.has(item.tableId)}
                     size="sm"
                     className="w-full"

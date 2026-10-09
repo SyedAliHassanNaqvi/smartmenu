@@ -26,8 +26,8 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
         env:
-          MONGODB_URI: mongodb://localhost:27017/smartmenu
-          DB_NAME: smartmenu
+          MONGODB_URI: mongodb://localhost:27017/visiondine
+          DB_NAME: visiondine
           JWT_SECRET: ci-only-secret-for-typechecking
           NEXT_PUBLIC_APP_URL: http://localhost:3000
 
@@ -49,8 +49,8 @@ jobs:
       - name: Build
         run: npm run build
         env:
-          MONGODB_URI: mongodb://localhost:27017/smartmenu
-          DB_NAME: smartmenu
+          MONGODB_URI: mongodb://localhost:27017/visiondine
+          DB_NAME: visiondine
           JWT_SECRET: ci-only-secret-for-typechecking
           NEXT_PUBLIC_APP_URL: http://localhost:3000
           NEXT_PUBLIC_AI_PROVIDER: gemini

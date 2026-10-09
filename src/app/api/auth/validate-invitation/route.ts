@@ -33,6 +33,7 @@ export async function GET(request: NextRequest) {
       valid: true,
       restaurantName: invitation.restaurantName,
       email: invitation.email,
+      plan: invitation.plan,
       amount: invitation.amount,
       currency: invitation.currency,
     });

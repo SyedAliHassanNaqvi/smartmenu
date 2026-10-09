@@ -1,29 +1,24 @@
 import { z } from "zod";
+import { PLAN_IDS } from "@/config/plans";
 
 /**
- * Body accepted by POST /api/xpay to initiate a Nexi XPay payment session.
+ * Body accepted by POST /api/xpay to start a subscription checkout.
+ * The price comes from the plan on the server — the client never sends an amount.
  */
 export const initiatePaymentSchema = z.object({
-  amount: z.coerce.number().positive("Amount must be positive"),
-  currency: z.string().length(3).default("EUR"),
-  restaurantName: z.string().min(1, "Restaurant name is required"),
-  ownerEmail: z.string().email("A valid owner email is required"),
-  ownerName: z.string().min(1, "Owner name is required"),
+  plan: z.enum(PLAN_IDS),
+  restaurantName: z.string().trim().min(2, "Restaurant name is required").max(100),
+  ownerEmail: z.string().trim().email("A valid owner email is required"),
+  ownerName: z.string().trim().min(2, "Owner name is required").max(100),
 });
 
 /**
- * Body accepted by PUT /api/xpay to confirm a successful payment and
- * create the restaurant invitation.
+ * Body accepted by PUT /api/xpay to confirm a payment. Only the order reference
+ * is needed; its status is verified with Nexi on the server.
  */
-export const paymentSuccessSchema = z.object({
-  orderId: z.string().min(1),
-  status: z.string().min(1),
-  restaurantName: z.string().min(1),
-  ownerEmail: z.string().email(),
-  ownerName: z.string().min(1),
-  amount: z.coerce.number(),
-  currency: z.string().length(3).optional(),
+export const confirmPaymentSchema = z.object({
+  orderId: z.string().trim().min(1).max(32),
 });
 
 export type InitiatePayment = z.infer<typeof initiatePaymentSchema>;
-export type PaymentSuccess = z.infer<typeof paymentSuccessSchema>;
+export type ConfirmPayment = z.infer<typeof confirmPaymentSchema>;

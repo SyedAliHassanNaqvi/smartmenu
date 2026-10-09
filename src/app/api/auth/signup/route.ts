@@ -6,6 +6,7 @@ import { User } from "@/lib/models/user.model";
 import { signupSchema } from "@/lib/validations/auth";
 import { ApiError } from "@/lib/api-error";
 import { withErrorHandling, ok } from "@/lib/api";
+import { getPlan } from "@/config/plans";
 
 /**
  * POST /api/auth/signup
@@ -28,6 +29,12 @@ export async function POST(request: NextRequest) {
       throw new ApiError(404, "Invalid or expired invitation token");
     }
 
+    if (await User.exists({ email: invitation.email })) {
+      throw new ApiError(409, "An account with this email already exists. Please sign in instead.");
+    }
+
+    const plan = getPlan(invitation.plan) ?? getPlan("starter")!;
+
     const restaurant = new Restaurant({
       name: invitation.restaurantName,
       ownerEmail: invitation.email,
@@ -35,8 +42,9 @@ export async function POST(request: NextRequest) {
       phone: restaurantDetails.phone,
       address: restaurantDetails.address,
       subscription: {
-        plan: "basic",
+        plan: plan.id,
         status: "active",
+        expiresAt: new Date(Date.now() + plan.periodDays * 24 * 60 * 60 * 1000),
       },
       settings: {
         currency: invitation.currency,
@@ -57,9 +65,17 @@ export async function POST(request: NextRequest) {
       isActive: true,
     });
 
-    await user.save();
+    try {
+      await user.save();
+    } catch (error) {
+      // Don't leave an orphaned restaurant behind if the account can't be created.
+      await Restaurant.deleteOne({ _id: restaurant._id });
+      throw error;
+    }
 
     invitation.status = "used";
+    invitation.usedAt = new Date();
+    invitation.restaurantId = restaurant._id.toString();
     await invitation.save();
 
     return ok({

@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { defineModel } from "./define-model";
 import bcrypt from "bcrypt";
 
 export interface IUser {
@@ -12,6 +13,7 @@ export interface IUser {
   lastLogin?: Date;
   createdAt: Date;
   updatedAt: Date;
+  comparePassword(candidatePassword: string): Promise<boolean>;
 }
 
 const userSchema = new mongoose.Schema<IUser>(
@@ -70,7 +72,7 @@ userSchema.methods.comparePassword = async function (candidatePassword: string):
 };
 
 // Index for efficient lookups
-userSchema.index({ email: 1, restaurantId: 1 }, { unique: true }); // Email unique per restaurant
+// `email` is globally unique (see field definition): login is by email alone.
 userSchema.index({ restaurantId: 1, role: 1 });
 
-export const User = mongoose.models.User || mongoose.model<IUser>("User", userSchema);
+export const User = defineModel<IUser>("User", userSchema);

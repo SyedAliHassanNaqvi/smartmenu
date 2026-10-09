@@ -64,3 +64,25 @@ export function getAuthUser(request: NextRequest): AuthTokenPayload {
   const token = getBearerToken(request);
   return verifyToken(token);
 }
+
+/**
+ * Resolve the authenticated user and require one of the given roles.
+ * Throws ApiError(403) when the user's role is not allowed.
+ *
+ *   const { restaurantId } = requireRole(request, ["admin"]);
+ */
+export function requireRole(
+  request: NextRequest,
+  roles: AuthTokenPayload["role"][],
+): AuthTokenPayload & { restaurantId: string } {
+  const user = getAuthUser(request);
+
+  if (!roles.includes(user.role)) {
+    throw new ApiError(403, "You do not have permission to perform this action");
+  }
+  if (!user.restaurantId) {
+    throw new ApiError(400, "Restaurant ID not found in token");
+  }
+
+  return { ...user, restaurantId: user.restaurantId };
+}

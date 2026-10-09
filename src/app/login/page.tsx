@@ -1,8 +1,9 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { useMutation } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import {
@@ -13,26 +14,44 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import { useAuthStore } from '@/store/use-auth-store';
+import { apiFetch } from '@/lib/api-client';
+
+interface LoginResponse {
+  token: string;
+  user: {
+    id: string;
+    email: string;
+    name: string;
+    role: 'admin' | 'staff' | 'customer';
+    restaurantId?: string;
+  };
+}
 
 export default function AdminLoginPage() {
   const router = useRouter();
   const { login, isAuthenticated, isHydrated, checkAuth } = useAuthStore();
 
   const [formData, setFormData] = useState({ email: '', password: '' });
-  const [submitting, setSubmitting] = useState(false);
   const [checking, setChecking] = useState(true);
   const [error, setError] = useState('');
   const cardRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    // Wait for hydration before checking auth
-    if (!isHydrated) {
-      return;
-    }
+  const loginMutation = useMutation({
+    mutationFn: (data: { email: string; password: string }) =>
+      apiFetch<LoginResponse>('/api/auth/login', { method: 'POST', body: data }),
+    onSuccess: (data) => {
+      login(data.token, data.user);
+    },
+    onError: (err) => {
+      setError(err instanceof Error ? err.message : 'Login failed');
+    },
+  });
 
-    // This entire block runs only on the client after hydration.
-    // We imperatively set the style here so the server never sees it —
-    // which is what was causing the style attribute mismatch.
+  const submitting = loginMutation.isPending;
+
+  useEffect(() => {
+    if (!isHydrated) return;
+
     if (cardRef.current) {
       cardRef.current.style.opacity = '0';
       cardRef.current.style.pointerEvents = 'none';
@@ -54,38 +73,14 @@ export default function AdminLoginPage() {
     }
   }, [checking, isAuthenticated, router]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
-    setSubmitting(true);
-
-    try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        login(data.token, data.user);
-        // redirect handled by useEffect above once isAuthenticated flips
-      } else {
-        setError(data.error || 'Login failed');
-      }
-    } catch (err) {
-      console.error('Login error:', err);
-      setError('Network error. Please try again.');
-    } finally {
-      setSubmitting(false);
-    }
+    loginMutation.mutate(formData);
   };
 
   return (
     <div className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
-      {/* No style prop here — server and client render identical HTML.
-          Opacity is set imperatively via ref after hydration. */}
       <Card ref={cardRef} className="w-full max-w-md">
         <CardHeader>
           <CardTitle>Admin Login</CardTitle>
@@ -134,7 +129,7 @@ export default function AdminLoginPage() {
             <p className="text-sm text-muted-foreground">
               Don&apos;t have an account?{' '}
               <Link href="/signup" className="text-primary hover:underline">
-                Sign up for SmartMenu
+                Sign up for Vision Dine
               </Link>
             </p>
           </div>

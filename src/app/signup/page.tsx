@@ -7,8 +7,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import PayButton from '@/components/shared/PayButton';
+import { BrandLogo } from '@/components/shared/BrandLogo';
+import { PLANS, formatPlanPrice } from '@/config/plans';
 import {
-  UtensilsCrossed,
   ArrowLeft,
   Check,
   ShieldCheck,
@@ -16,31 +17,6 @@ import {
   Sparkles,
   Lock,
 } from 'lucide-react';
-
-const PLANS = [
-  {
-    id: 'starter',
-    name: 'Starter',
-    price: 1550, // cents — €15.50
-    description: 'Perfect for small cafés and bistros',
-    features: ['Digital menu & QR codes', 'Basic order tracking', 'Up to 50 menu items'],
-  },
-  {
-    id: 'pro',
-    name: 'Pro',
-    price: 2900, // cents — €29.00
-    description: 'For growing restaurants',
-    features: ['Everything in Starter', 'AI recommendations', 'Real-time analytics', 'Unlimited menu items'],
-    popular: true,
-  },
-  {
-    id: 'premium',
-    name: 'Premium',
-    price: 4900, // cents — €49.00
-    description: 'The full SmartMenu experience',
-    features: ['Everything in Pro', 'WebAR menu previews', 'Loyalty gamification', 'Priority support'],
-  },
-];
 
 export default function SignupPage() {
   const router = useRouter();
@@ -68,13 +44,8 @@ export default function SignupPage() {
     <div className="min-h-screen bg-white text-slate-900 antialiased">
       <header className="border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
         <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
-              <UtensilsCrossed className="h-5 w-5" />
-            </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900">
-              Smart<span className="text-indigo-600">Menu</span>
-            </span>
+          <Link href="/" aria-label="Vision Dine home">
+            <BrandLogo />
           </Link>
           <Button variant="ghost" size="sm" onClick={() => router.push('/')} className="gap-2">
             <ArrowLeft className="h-4 w-4" />
@@ -94,7 +65,7 @@ export default function SignupPage() {
           <div className="text-center">
             <Badge className="mb-4 gap-1.5 border-indigo-200 bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-700">
               <Sparkles className="h-3.5 w-3.5" />
-              Get started with SmartMenu
+              Get started with Vision Dine
             </Badge>
             <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 sm:text-4xl">
               Bring your restaurant online
@@ -133,7 +104,7 @@ export default function SignupPage() {
                     )}
                     <p className="text-sm font-bold text-slate-900">{plan.name}</p>
                     <p className="mt-1 text-2xl font-extrabold text-slate-900">
-                      €{(plan.price / 100).toFixed(2)}
+                      {formatPlanPrice(plan)}
                       <span className="text-sm font-medium text-slate-400">/mo</span>
                     </p>
                     <p className="mt-1 text-xs text-slate-500">{plan.description}</p>
@@ -213,7 +184,7 @@ export default function SignupPage() {
                     </p>
                   </div>
                   <p className="text-2xl font-extrabold text-slate-900 sm:ml-4">
-                    €{(selectedPlan.price / 100).toFixed(2)}
+                    {formatPlanPrice(selectedPlan)}
                   </p>
                 </div>
               </div>
@@ -226,7 +197,7 @@ export default function SignupPage() {
 
               <div className="mt-4">
                 <PayButton
-                  amount={selectedPlan.price}
+                  plan={selectedPlan}
                   restaurantName={formData.restaurantName}
                   ownerEmail={formData.ownerEmail}
                   ownerName={formData.ownerName}
@@ -236,7 +207,7 @@ export default function SignupPage() {
 
               <p className="mt-3 flex items-center justify-center gap-1.5 text-xs text-slate-500">
                 <Lock className="h-3.5 w-3.5" />
-                Your card details never touch SmartMenu — payment happens on the Nexi XPay page.
+                Your card details never touch Vision Dine — payment happens on the Nexi XPay page.
               </p>
             </div>
           </div>

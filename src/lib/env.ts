@@ -9,7 +9,7 @@ import { z } from "zod";
  */
 const serverEnvSchema = z.object({
   MONGODB_URI: z.string().min(1, "MONGODB_URI is required"),
-  DB_NAME: z.string().min(1).default("smartmenu"),
+  DB_NAME: z.string().min(1).default("visiondine"),
   JWT_SECRET: z.string().min(16, "JWT_SECRET must be at least 16 characters"),
   JWT_EXPIRES_IN: z.string().min(1).default("7d"),
 
@@ -19,6 +19,11 @@ const serverEnvSchema = z.object({
   // Payments (Nexi XPay) — optional, required only when payments are enabled
   NEXI_XPAY_API_URL: z.string().url().optional(),
   NEXI_XPAY_API_KEY: z.string().optional(),
+
+  // Media (Cloudinary) — optional, required only for menu media uploads
+  CLOUDINARY_CLOUD_NAME: z.string().optional(),
+  CLOUDINARY_API_KEY: z.string().optional(),
+  CLOUDINARY_API_SECRET: z.string().optional(),
 
   // Emails (Resend) — optional, required only when sending invitation emails
   RESEND_API_KEY: z.string().optional(),

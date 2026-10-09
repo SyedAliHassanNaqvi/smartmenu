@@ -4,8 +4,11 @@ import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { useEffect, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useAuthStore } from '@/store/use-auth-store';
+import { queryKeys } from '@/lib/query-keys';
+import { apiFetch } from '@/lib/api-client';
 
 interface Table {
   _id: string;
@@ -32,42 +35,19 @@ const initialFormData: FormData = {
 
 export default function Tables() {
   const { token } = useAuthStore();
-  const [tables, setTables] = useState<Table[]>([]);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+
   const [showModal, setShowModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
-  const fetchTables = () => {
-    if (!token) return;
-
-    return fetch('/api/tables', {
-      headers: {
-        'Authorization': `Bearer ${token}`,
-      },
-    })
-      .then((response) => {
-        if (!response.ok) throw new Error('Failed to fetch tables');
-        return response.json();
-      })
-      .then((data) => {
-        setTables(data);
-        setError('');
-      })
-      .catch((err) => {
-        console.error('Error fetching tables:', err);
-        setError('Failed to load tables');
-      })
-      .finally(() => setLoading(false));
-  };
-
-  // Fetch tables on mount
-  useEffect(() => {
-    fetchTables();
-  }, []);
+  const { data: tables = [], isLoading: loading, error: fetchError } = useQuery({
+    queryKey: queryKeys.tables.all,
+    queryFn: () => apiFetch<Table[]>('/api/tables', { token: token || undefined }),
+    enabled: !!token,
+  });
 
   const handleOpenModal = (table?: Table) => {
     if (table) {
@@ -93,7 +73,30 @@ export default function Tables() {
     setError('');
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const saveMutation = useMutation({
+    mutationFn: ({ url, body }: { url: string; body: unknown }) =>
+      apiFetch<Table>(url, { method: editingId ? 'PUT' : 'POST', token, body }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tables.all });
+      setSuccess(editingId ? 'Table updated successfully' : 'Table added successfully');
+      handleCloseModal();
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : 'An error occurred'),
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) =>
+      apiFetch<void>(`/api/tables/${id}`, { method: 'DELETE', token }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: queryKeys.tables.all });
+      setSuccess('Table deleted successfully');
+    },
+    onError: (err) => setError(err instanceof Error ? err.message : 'Failed to delete table'),
+  });
+
+  const submitting = saveMutation.isPending || deleteMutation.isPending;
+
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
     setSuccess('');
@@ -113,59 +116,20 @@ export default function Tables() {
       return;
     }
 
-    setSubmitting(true);
+    const payload = {
+      tableNumber: Number(formData.tableNumber),
+      capacity: Number(formData.capacity),
+      location: formData.location,
+      status: editingId ? formData.status : 'available',
+    };
 
-    try {
-      const url = editingId ? `/api/tables/${editingId}` : '/api/tables';
-      const method = editingId ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          tableNumber: Number(formData.tableNumber),
-          capacity: Number(formData.capacity),
-          location: formData.location,
-          status: editingId ? formData.status : 'available',
-        }),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to save table');
-      }
-
-      setSuccess(editingId ? 'Table updated successfully' : 'Table added successfully');
-      handleCloseModal();
-      await fetchTables();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-    } finally {
-      setSubmitting(false);
-    }
+    const url = editingId ? `/api/tables/${editingId}` : '/api/tables';
+    saveMutation.mutate({ url, body: payload });
   };
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = (id: string) => {
     if (!confirm('Are you sure you want to delete this table?')) return;
-
-    try {
-      const response = await fetch(`/api/tables/${id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      if (!response.ok) throw new Error('Failed to delete table');
-      
-      setSuccess('Table deleted successfully');
-      await fetchTables();
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to delete table');
-    }
+    deleteMutation.mutate(id);
   };
 
   const getStatusColor = (status: string) => {
@@ -200,30 +164,31 @@ export default function Tables() {
           <p className="text-green-800">{success}</p>
         </div>
       )}
-      {error && (
+      {(fetchError || error) && (
         <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-          <p className="text-red-800">{error}</p>
+          <p className="text-red-800">
+            {fetchError instanceof Error ? fetchError.message : fetchError || error}
+          </p>
         </div>
       )}
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <Card className="w-full max-w-md p-6">
             <h2 className="text-2xl font-bold mb-4">
               {editingId ? 'Edit Table' : 'Add New Table'}
             </h2>
-            
+
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium mb-1">Table Number</label>
                 <Input
-                className='text-white'
                   type="number"
                   min="1"
                   value={formData.tableNumber}
                   onChange={(e) =>
-                    setFormData(prev => ({ ...prev, tableNumber: e.target.value ? Number(e.target.value) : '' }))
+                    setFormData((prev: FormData) => ({ ...prev, tableNumber: e.target.value ? Number(e.target.value) : '' }))
                   }
                   placeholder="1"
                   required
@@ -233,12 +198,11 @@ export default function Tables() {
               <div>
                 <label className="block text-sm font-medium mb-1">Capacity (Guests)</label>
                 <Input
-                className='text-white'
                   type="number"
                   min="1"
                   value={formData.capacity}
                   onChange={(e) =>
-                    setFormData(prev => ({ ...prev, capacity: e.target.value ? Number(e.target.value) : '' }))
+                    setFormData((prev: FormData) => ({ ...prev, capacity: e.target.value ? Number(e.target.value) : '' }))
                   }
                   placeholder="4"
                   required
@@ -248,11 +212,10 @@ export default function Tables() {
               <div>
                 <label className="block text-sm font-medium mb-1">Location (Optional)</label>
                 <Input
-                className='text-white'
                   type="text"
                   value={formData.location}
                   onChange={(e) =>
-                    setFormData(prev => ({ ...prev, location: e.target.value }))
+                    setFormData((prev: FormData) => ({ ...prev, location: e.target.value }))
                   }
                   placeholder="e.g., Window, Corner, Outdoor"
                 />
@@ -264,7 +227,7 @@ export default function Tables() {
                   <select
                     value={formData.status}
                     onChange={(e) =>
-                      setFormData(prev => ({ ...prev, status: e.target.value as FormData['status'] }))
+                      setFormData((prev: FormData) => ({ ...prev, status: e.target.value as FormData['status'] }))
                     }
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-white text-black"
                   >
@@ -284,19 +247,18 @@ export default function Tables() {
 
               <div className="flex gap-2 pt-4">
                 <Button
-
                   type="button"
                   variant="outline"
                   onClick={handleCloseModal}
                   disabled={submitting}
-                  className="flex-1 text-white"
+                  className="flex-1"
                 >
                   Cancel
                 </Button>
                 <Button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 text-white"
+                  className="flex-1"
                 >
                   {submitting ? 'Saving...' : 'Save'}
                 </Button>
@@ -348,7 +310,7 @@ export default function Tables() {
                   size="sm"
                   variant="outline"
                   onClick={() => handleOpenModal(table)}
-                  className="w-full text-white"
+                  className="w-full"
                 >
                   Edit
                 </Button>

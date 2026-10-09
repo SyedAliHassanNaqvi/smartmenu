@@ -1,5 +1,33 @@
 import mongoose from "mongoose";
+import { defineModel } from "./define-model";
 import { IProduct } from "@/types/models";
+import { MAX_GALLERY_IMAGES, MODEL3D_STATUSES } from "@/lib/media-rules";
+
+const mediaAssetSchema = new mongoose.Schema(
+  {
+    url: { type: String, required: true },
+    publicId: { type: String, required: true },
+    width: Number,
+    height: Number,
+    bytes: Number,
+    format: String,
+    duration: Number,
+  },
+  { _id: false }
+);
+
+const model3dSchema = new mongoose.Schema(
+  {
+    status: { type: String, enum: MODEL3D_STATUSES, default: "none" },
+    source: { type: String, enum: ["pipeline", "manual"] },
+    glbUrl: String,
+    posterUrl: String,
+    publicId: String,
+    error: String,
+    updatedAt: Date,
+  },
+  { _id: false }
+);
 
 const productSchema = new mongoose.Schema<IProduct>(
   {
@@ -30,6 +58,19 @@ const productSchema = new mongoose.Schema<IProduct>(
       required: true,
     },
     image: String,
+    gallery: {
+      type: [mediaAssetSchema],
+      default: [],
+      validate: {
+        validator: (value: unknown[]) => value.length <= MAX_GALLERY_IMAGES,
+        message: `A product can have at most ${MAX_GALLERY_IMAGES} gallery images`,
+      },
+    },
+    video: mediaAssetSchema,
+    model3d: {
+      type: model3dSchema,
+      default: () => ({ status: "none" }),
+    },
     isAvailable: {
       type: Boolean,
       default: true,
@@ -68,4 +109,4 @@ const productSchema = new mongoose.Schema<IProduct>(
 productSchema.index({ restaurantId: 1, category: 1 });
 productSchema.index({ restaurantId: 1, isAvailable: 1 });
 
-export const Product = mongoose.models.Product || mongoose.model<IProduct>("Product", productSchema);
+export const Product = defineModel<IProduct>("Product", productSchema);

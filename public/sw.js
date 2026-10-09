@@ -1,4 +1,6 @@
-const CACHE_NAME = "smartmenu-v3";
+// Registered in production only (see src/app/layout.tsx). Bump the version to
+// drop every cached asset on the next deploy.
+const CACHE_NAME = "visiondine-v3";
 const urlsToCache = [
   "/",
   "/offline.html",
@@ -113,14 +115,14 @@ async function clearPendingOrders() {}
 
 self.addEventListener("push", (event) => {
   const options = {
-    body: event.data?.text() || "New notification from SmartMenu",
+    body: event.data?.text() || "New notification from Vision Dine",
     icon: "/icon-192x192.png",
     badge: "/badge-72x72.png",
-    tag: "smartmenu-notification",
+    tag: "visiondine-notification",
   };
 
   event.waitUntil(
-    self.registration.showNotification("SmartMenu", options)
+    self.registration.showNotification("Vision Dine", options)
   );
 });
 

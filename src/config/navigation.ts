@@ -16,7 +16,7 @@ export interface NavItem {
  * Admin panel navigation — used by the sidebar layout.
  */
 export const adminNavItems: NavItem[] = [
-  { label: "Dashboard", href: "/admin/dashboard", icon: LayoutDashboard },
+  { label: "Live Orders", href: "/admin/dashboard", icon: LayoutDashboard },
   { label: "Menu Management", href: "/admin/menu", icon: MenuIcon },
   { label: "Tables", href: "/admin/tables", icon: UtensilsCrossed },
   { label: "QR Codes", href: "/admin/qr-codes", icon: QrCode },

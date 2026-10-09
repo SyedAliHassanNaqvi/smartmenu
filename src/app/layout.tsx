@@ -6,6 +6,29 @@ import { NetworkStatus } from "@/components/shared/network-status";
 
 const inter = Inter({ subsets: ["latin"] });
 
+/**
+ * Production registers the offline service worker. Development removes any
+ * worker and caches left behind, because a cached bundle would hide code
+ * changes until a hard reload.
+ */
+const SERVICE_WORKER_SCRIPT =
+  process.env.NODE_ENV === "production"
+    ? `if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker
+            .register('/sw.js', { updateViaCache: 'none' })
+            .catch((err) => console.warn('SW registration failed:', err));
+        });
+      }`
+    : `if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.getRegistrations().then((registrations) => {
+          registrations.forEach((registration) => registration.unregister());
+        });
+        if ('caches' in window) {
+          caches.keys().then((keys) => keys.forEach((key) => caches.delete(key)));
+        }
+      }`;
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
@@ -14,14 +37,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "SmartMenu - AI-Powered Restaurant Ordering",
-  description: "Experience intelligent dining with AI recommendations, AR menu exploration, and real-time order tracking",
+  title: "Vision Dine - AI-Powered Interactive AR Menu",
+  description: "Scan, explore dishes in 3D and AR, order and pay from your own phone with Vision Dine.",
   generator: "Next.js",
   manifest: "/manifest.json",
   keywords: ["restaurant", "menu", "AI", "order", "dining", "AR"],
-  authors: [{ name: "SmartMenu Team" }],
+  authors: [{ name: "Vision Dine Team" }],
   icons: {
-    icon: [{ url: "/favicon.ico" }],
+    icon: [{ url: "/icon.svg", type: "image/svg+xml" }, { url: "/favicon.ico" }],
     apple: [{ url: "/apple-touch-icon.png" }],
   },
 };
@@ -37,31 +60,14 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="SmartMenu" />
+        <meta name="apple-mobile-web-app-title" content="Vision Dine" />
       </head>
       <body className={inter.className}>
         <RootProvider>
           {children}
         </RootProvider>
         <NetworkStatus />
-        <script
-          dangerouslySetInnerHTML={{
-            __html: `
-              // Service Worker registration with update checking
-              if ('serviceWorker' in navigator) {
-                window.addEventListener('load', () => {
-                  navigator.serviceWorker.register('/sw.js?v=' + Date.now(), {
-                    updateViaCache: 'none'
-                  }).then(registration => {
-                    console.log('SW registered:', registration);
-                  }).catch(err => {
-                    console.log('SW registration failed:', err);
-                  });
-                });
-              }
-            `,
-          }}
-        />
+        <script dangerouslySetInnerHTML={{ __html: SERVICE_WORKER_SCRIPT }} />
       </body>
     </html>
   );

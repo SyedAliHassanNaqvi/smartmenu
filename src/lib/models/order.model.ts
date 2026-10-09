@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { defineModel } from "./define-model";
 import { IOrder } from "@/types/models";
 
 const orderItemSchema = new mongoose.Schema(
@@ -66,6 +67,7 @@ const orderSchema = new mongoose.Schema<IOrder>(
     },
     specialRequests: String,
     estimatedTime: Number,
+    readyBy: Date,
     completedAt: Date,
   },
   { timestamps: true }
@@ -76,4 +78,4 @@ orderSchema.index({ restaurantId: 1, tableId: 1 });
 orderSchema.index({ restaurantId: 1, status: 1 });
 orderSchema.index({ restaurantId: 1, createdAt: -1 });
 
-export const Order = mongoose.models.Order || mongoose.model<IOrder>("Order", orderSchema);
+export const Order = defineModel<IOrder>("Order", orderSchema);

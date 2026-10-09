@@ -1,83 +1,61 @@
 'use client';
 
 import { useState } from 'react';
+import { useMutation } from '@tanstack/react-query';
+import { apiFetch } from '@/lib/api-client';
+import { formatPlanPrice, type Plan } from '@/config/plans';
 
 interface PayButtonProps {
-  amount: number; // Amount in cents
+  plan: Plan;
   restaurantName: string;
   ownerEmail: string;
   ownerName: string;
-  currency?: string;
   disabled?: boolean;
 }
 
+/**
+ * Starts a subscription checkout for `plan` and redirects to the Nexi XPay
+ * hosted page. The server decides the amount from the plan.
+ */
 export default function PayButton({
-  amount,
+  plan,
   restaurantName,
   ownerEmail,
   ownerName,
-  currency = 'EUR',
   disabled = false,
 }: PayButtonProps) {
-  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const handlePayment = async (): Promise<void> => {
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch('/api/xpay', {
+  const paymentMutation = useMutation({
+    mutationFn: () =>
+      apiFetch<{ url: string; orderId: string }>('/api/xpay', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ amount, currency, restaurantName, ownerEmail, ownerName }),
-      });
+        body: { plan: plan.id, restaurantName, ownerEmail, ownerName },
+      }),
+    onSuccess: (data) => {
+      window.location.href = data.url;
+    },
+    onError: (err: Error) => {
+      setError(err.message || 'Network error. Please check your connection and try again.');
+    },
+  });
 
-      const data = await response.json();
-
-      if (data.url) {
-        // Persist the pending order so /payment/success can confirm it.
-        sessionStorage.setItem(
-          'xpay_pending_order',
-          JSON.stringify({
-            orderId: data.orderId,
-            restaurantName,
-            ownerEmail,
-            ownerName,
-            amount,
-            currency,
-          })
-        );
-        window.location.href = data.url;
-        // Don't setLoading(false) — keep spinner while browser navigates away
-        return;
-      }
-
-      // Server returned a response but no URL — show what the server said
-      setError(data.error ?? 'Payment initiation failed. Please try again.');
-    } catch (err) {
-      console.error('Payment error:', err);
-      setError('Network error. Please check your connection and try again.');
-    }
-
-    setLoading(false);
-  };
+  const loading = paymentMutation.isPending;
 
   return (
     <div className="flex flex-col items-start gap-2">
       <button
-        onClick={handlePayment}
+        onClick={() => {
+          setError(null);
+          paymentMutation.mutate();
+        }}
         disabled={loading || disabled}
-        className="w-full px-6 py-3 bg-blue-600 text-white font-medium rounded-lg hover:bg-blue-700 disabled:bg-gray-400 transition"
+        className="w-full rounded-lg bg-indigo-600 px-6 py-3 font-medium text-white transition hover:bg-indigo-700 disabled:bg-gray-400"
       >
-        {loading ? 'Redirecting to Nexi XPay...' : `Pay €${(amount / 100).toFixed(2)} with XPay`}
+        {loading ? 'Redirecting to Nexi XPay...' : `Pay ${formatPlanPrice(plan)} with XPay`}
       </button>
 
-      {error && (
-        <p className="text-sm text-red-600">
-          ⚠️ {error}
-        </p>
-      )}
+      {error && <p className="text-sm text-red-600">⚠️ {error}</p>}
     </div>
   );
 }

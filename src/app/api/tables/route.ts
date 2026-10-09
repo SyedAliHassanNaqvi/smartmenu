@@ -18,7 +18,7 @@ export async function GET(request: NextRequest) {
 
     const tables = await Table.find({ restaurantId })
       .sort({ tableNumber: 1 })
-      .select("_id tableNumber status capacity qrCode createdAt");
+      .select("_id tableNumber status capacity location currentGuests qrCode createdAt");
 
     return ok(tables);
   });

@@ -35,5 +35,5 @@ This version has breaking changes — APIs, conventions, and file structure may 
 ## Auth
 
 - Server verifies JWTs signed with `serverEnv.JWT_SECRET` (never a hardcoded fallback).
-- Sessions also live in an httpOnly cookie (`smartmenu_token`) set by the auth routes
+- Sessions also live in an httpOnly cookie (`visiondine_token`) set by the auth routes
   and checked by `src/proxy.ts` for `/admin/*`. Client state lives in `useAuthStore`.

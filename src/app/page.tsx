@@ -6,8 +6,8 @@ import QRCode from 'react-qr-code';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useAuthStore } from '@/store/use-auth-store';
+import { BrandLogo } from '@/components/shared/BrandLogo';
 import {
-  UtensilsCrossed,
   Sparkles,
   Cuboid,
   BrainCircuit,
@@ -119,17 +119,7 @@ const STATS = [
 ];
 
 function Logo() {
-  return (
-    <div className="flex items-center gap-2.5">
-      <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 text-white shadow-lg shadow-indigo-500/30">
-        <UtensilsCrossed className="h-5 w-5" />
-      </div>
-      
-      <span className="text-xl font-bold tracking-tight text-slate-900">
-        Smart<span className="text-indigo-600">Menu</span>
-      </span>
-    </div>
-  );
+  return <BrandLogo />;
 }
 
 function Navbar() {
@@ -148,7 +138,7 @@ function Navbar() {
   return (
     <header className="sticky top-0 z-50 border-b border-slate-200/70 bg-white/80 backdrop-blur-xl">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
-        <button onClick={() => router.push('/')} className="cursor-pointer" aria-label="SmartMenu home">
+        <button onClick={() => router.push('/')} className="cursor-pointer" aria-label="Vision Dine home">
           <Logo />
         </button>
 
@@ -282,7 +272,7 @@ function Hero() {
           </h1>
 
           <p className="mt-6 text-lg leading-relaxed text-slate-600">
-            SmartMenu turns every table into a digital dining experience — AI
+            Vision Dine turns every table into a digital dining experience — AI
             recommendations, augmented-reality menu previews, and real-time order
             tracking, all from a simple QR scan.
           </p>
@@ -330,7 +320,7 @@ function Hero() {
                 <div className="mb-4 flex items-center justify-between">
                   <div>
                     <p className="text-xs font-medium text-slate-400">Table 12</p>
-                    <p className="text-sm font-semibold text-slate-900">SmartMenu Dining</p>
+                    <p className="text-sm font-semibold text-slate-900">Vision Dine</p>
                   </div>
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-50 text-indigo-600">
                     <Smartphone className="h-4 w-4" />
@@ -343,7 +333,7 @@ function Hero() {
                   </div>
                   <div className="mx-auto w-fit rounded-xl bg-white p-2 shadow-sm">
                     <QRCode
-                      value="smartmenu://customer/demo/table-12"
+                      value="visiondine://customer/demo/table-12"
                       size={128}
                       bgColor="#ffffff"
                       fgColor="#312e81"
@@ -502,7 +492,7 @@ function CtaBand() {
           Ready to bring your restaurant online?
         </h2>
         <p className="mx-auto mt-4 max-w-2xl text-lg text-indigo-100">
-          Join restaurants using SmartMenu to boost engagement, cut wait times, and
+          Join restaurants using Vision Dine to boost engagement, cut wait times, and
           turn diners into loyal regulars.
         </p>
         <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
@@ -536,11 +526,11 @@ function Footer() {
     <footer className="border-t border-slate-200 bg-white">
       <div className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
         <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
-          <button onClick={() => router.push('/')} className="cursor-pointer" aria-label="SmartMenu home">
+          <button onClick={() => router.push('/')} className="cursor-pointer" aria-label="Vision Dine home">
             <Logo />
           </button>
           <p className="text-sm text-slate-500">
-            © {new Date().getFullYear()} SmartMenu. All rights reserved.
+            © {new Date().getFullYear()} Vision Dine. All rights reserved.
           </p>
           <div className="flex items-center gap-6 text-sm text-slate-500">
             {NAV_LINKS.map((link) => (

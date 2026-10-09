@@ -12,7 +12,7 @@ import { Card } from '@/components/ui/card';
  */
 export function ARMascot() {
   const sceneRef = useRef<HTMLDivElement>(null);
-  const [mascotMessage, setMascotMessage] = useState('Welcome to SmartMenu!');
+  const [mascotMessage, setMascotMessage] = useState('Welcome to Vision Dine!');
   const [isListening, setIsListening] = useState(false);
   const [ambientNoise, setAmbientNoise] = useState(0);
   const { analyzeAudio, threshold } = useAudioAnalyzer({ threshold: -30 });

@@ -1,6 +1,7 @@
 ﻿import type { NextRequest } from "next/server";
 import { dbConnect } from "@/lib/db";
 import { Table } from "@/lib/models/table.model";
+import { getPublicRestaurant } from "@/lib/public-restaurant";
 import { ApiError } from "@/lib/api-error";
 import { withErrorHandling, ok } from "@/lib/api";
 
@@ -37,6 +38,7 @@ export async function GET(request: NextRequest) {
         capacity: table.capacity,
         restaurantId: table.restaurantId,
       },
+      restaurant: await getPublicRestaurant(table.restaurantId),
     });
   });
 }
