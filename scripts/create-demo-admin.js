@@ -20,7 +20,7 @@ async function main() {
   loadEnv();
 
   const uri = process.env.MONGODB_URI;
-  const dbName = process.env.DB_NAME || 'smartmenu';
+  const dbName = process.env.DB_NAME || 'visiondine';
 
   if (!uri) {
     throw new Error('MONGODB_URI is required in .env or environment');
@@ -77,12 +77,12 @@ async function main() {
   const User = connection.models.User || connection.model('User', userSchema);
 
   const restaurant = await Restaurant.create({
-    name: 'Demo SmartMenu Restaurant',
-    ownerEmail: 'demo-admin@smartmenu.local',
+    name: 'Demo Vision Dine Restaurant',
+    ownerEmail: 'demo-admin@visiondine.local',
     ownerName: 'Demo Admin',
     address: '123 Demo Street',
     phone: '+1234567890',
-    description: 'Demo restaurant for SmartMenu testing',
+    description: 'Demo restaurant for Vision Dine testing',
     theme: {
       primaryColor: '#2563eb',
       secondaryColor: '#4f46e5',
@@ -102,7 +102,7 @@ async function main() {
   const hashedPassword = await bcrypt.hash('DemoPass123!', 12);
 
   const user = await User.create({
-    email: 'admin@demo.smartmenu',
+    email: 'admin@demo.visiondine',
     password: hashedPassword,
     name: 'Demo Admin',
     role: 'admin',

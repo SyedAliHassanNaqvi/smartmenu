@@ -1,53 +1,41 @@
-// A-Frame custom element type definitions
-declare namespace JSX {
-  interface IntrinsicElements {
-    "a-scene": AFrameSceneProps;
-    "a-assets": Record<string, any>;
-    "a-asset-item": AFrameAssetProps;
-    "a-entity": AFrameEntityProps;
-    "a-box": AFrameBoxProps;
-    "a-camera": AFrameCameraProps;
-    "a-light": AFrameLightProps;
-  }
+import type * as React from "react";
 
-  interface AFrameSceneProps {
-    embedded?: boolean;
-    children?: React.ReactNode;
-    [key: string]: any;
+declare global {
+  namespace JSX {
+    interface IntrinsicElements {
+      "a-scene": AFrameSceneProps;
+      "a-assets": Record<string, unknown>;
+      "a-asset-item": AFrameAssetProps;
+      "a-entity": AFrameEntityProps;
+      "a-light": AFrameLightProps;
+    }
   }
+}
 
-  interface AFrameAssetProps {
-    id: string;
-    src: string;
-    [key: string]: any;
-  }
+interface AFrameSceneProps {
+  embedded?: boolean;
+  children?: React.ReactNode;
+  [key: string]: unknown;
+}
 
-  interface AFrameEntityProps {
-    "gltf-model"?: string;
-    position?: string;
-    rotation?: string;
-    scale?: string;
-    children?: React.ReactNode;
-    [key: string]: any;
-  }
+interface AFrameAssetProps {
+  id: string;
+  src: string;
+  [key: string]: unknown;
+}
 
-  interface AFrameBoxProps {
-    position?: string;
-    rotation?: string;
-    scale?: string;
-    color?: string;
-    [key: string]: any;
-  }
+interface AFrameEntityProps {
+  "gltf-model"?: string;
+  position?: string;
+  rotation?: string;
+  scale?: string;
+  children?: React.ReactNode;
+  [key: string]: unknown;
+}
 
-  interface AFrameCameraProps {
-    position?: string;
-    [key: string]: any;
-  }
-
-  interface AFrameLightProps {
-    type?: string;
-    position?: string;
-    intensity?: number;
-    [key: string]: any;
-  }
+interface AFrameLightProps {
+  type?: string;
+  position?: string;
+  intensity?: number;
+  [key: string]: unknown;
 }

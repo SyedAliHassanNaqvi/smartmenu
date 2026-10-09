@@ -1,50 +1,41 @@
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import { Invitation } from '@/lib/models/invitation.model';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { Invitation } from "@/lib/models/invitation.model";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
 
 /**
  * GET /api/auth/validate-invitation?token=UNIQUE_HASH_123
- * Validate invitation token and return invitation details
+ * Validate an invitation token and return its details.
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const { searchParams } = new URL(request.url);
-    const token = searchParams.get('token');
+    const token = searchParams.get("token");
 
     if (!token) {
-      return NextResponse.json(
-        { error: 'Invitation token is required' },
-        { status: 400 }
-      );
+      throw new ApiError(400, "Invitation token is required");
     }
 
     await dbConnect();
 
     const invitation = await Invitation.findOne({
       invitationToken: token,
-      status: 'pending',
-      expiresAt: { $gt: new Date() }
+      status: "pending",
+      expiresAt: { $gt: new Date() },
     });
 
     if (!invitation) {
-      return NextResponse.json(
-        { error: 'Invalid or expired invitation token' },
-        { status: 404 }
-      );
+      throw new ApiError(404, "Invalid or expired invitation token");
     }
 
-    return NextResponse.json({
+    return ok({
       valid: true,
       restaurantName: invitation.restaurantName,
       email: invitation.email,
+      plan: invitation.plan,
       amount: invitation.amount,
       currency: invitation.currency,
     });
-  } catch (error: any) {
-    console.error('Error validating invitation:', error);
-    return NextResponse.json(
-      { error: 'Failed to validate invitation' },
-      { status: 500 }
-    );
-  }
+  });
 }

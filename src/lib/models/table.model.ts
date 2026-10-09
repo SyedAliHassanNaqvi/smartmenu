@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { defineModel } from "./define-model";
 import { ITable } from "@/types/models";
 
 const tableSchema = new mongoose.Schema<ITable>(
@@ -18,6 +19,7 @@ const tableSchema = new mongoose.Schema<ITable>(
       min: 1,
     },
     location: String,
+    tableCode: String,
     status: {
       type: String,
       enum: ["available", "occupied", "reserved", "maintenance"],
@@ -36,5 +38,6 @@ const tableSchema = new mongoose.Schema<ITable>(
 // Index for efficient multi-tenant queries
 tableSchema.index({ restaurantId: 1, tableNumber: 1 }, { unique: true }); // Table numbers unique per restaurant
 tableSchema.index({ restaurantId: 1, status: 1 });
+tableSchema.index({ tableCode: 1 }, { unique: true, sparse: true });
 
-export const Table = mongoose.models.Table || mongoose.model<ITable>("Table", tableSchema);
+export const Table = defineModel<ITable>("Table", tableSchema);

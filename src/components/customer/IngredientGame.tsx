@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { useOrderStore } from '@/store/use-order-store';
 
 /**
  * Ingredient Game Component
@@ -16,7 +15,6 @@ export function IngredientGame() {
   const [timeLeft, setTimeLeft] = useState(30);
   const [caught, setCaught] = useState<string[]>([]);
   const [gameOver, setGameOver] = useState(false);
-  const { applyDiscount } = useOrderStore();
 
   const ingredients = [
     '🍅', // Tomato
@@ -29,17 +27,23 @@ export function IngredientGame() {
     '🍆', // Eggplant
   ];
 
+  const endGame = () => {
+    setGameActive(false);
+    setGameOver(true);
+
+  };
+
   // Game timer
   useEffect(() => {
-    if (!gameActive || timeLeft === 0) return;
+    if (!gameActive || timeLeft <= 0) return;
 
     const timer = setTimeout(() => {
-      setTimeLeft(timeLeft - 1);
+      if (timeLeft === 1) {
+        endGame();
+      } else {
+        setTimeLeft(timeLeft - 1);
+      }
     }, 1000);
-
-    if (timeLeft === 0) {
-      endGame();
-    }
 
     return () => clearTimeout(timer);
   }, [gameActive, timeLeft]);
@@ -62,18 +66,6 @@ export function IngredientGame() {
     // Haptic feedback if available
     if ('vibrate' in navigator) {
       navigator.vibrate(50);
-    }
-  };
-
-  const endGame = () => {
-    setGameActive(false);
-    setGameOver(true);
-
-    // Calculate discount based on score
-    const discountPercentage = Math.floor(score / 10); // 1% per 10 points
-    if (discountPercentage > 0) {
-      const discountCode = `GAME${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
-      applyDiscount(discountCode, discountPercentage);
     }
   };
 
@@ -192,7 +184,7 @@ export function IngredientGame() {
                 {/* Share Score */}
                 <Card className="p-4 bg-blue-50">
                   <p className="text-sm font-semibold text-gray-900 mb-2">
-                    💡 Pro Tip: Your discount will be automatically applied to your order!
+                    💡 Pro Tip: Show this screen to your server to redeem your reward.
                   </p>
                 </Card>
               </div>

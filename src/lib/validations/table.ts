@@ -23,7 +23,14 @@ export const createTableSchema = tableSchema.omit({
   currentGuests: true,
 });
 
-export const updateTableSchema = tableSchema.partial().omit({
-  createdAt: true,
-  updatedAt: true,
+/**
+ * Fields an admin may edit. Explicit (no defaults) so a partial update never
+ * resets status/occupancy, and system fields (tableCode, qrCode, activeOrder)
+ * stay server-controlled.
+ */
+export const updateTableSchema = z.object({
+  tableNumber: z.number().int().positive("Table number must be positive").optional(),
+  capacity: z.number().int().positive("Capacity must be positive").optional(),
+  location: z.string().trim().max(100).optional(),
+  status: z.enum(["available", "occupied", "reserved", "maintenance"]).optional(),
 });

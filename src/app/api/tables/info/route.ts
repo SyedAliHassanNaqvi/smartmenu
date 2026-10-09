@@ -1,50 +1,44 @@
-import { NextRequest, NextResponse } from 'next/server';
-import dbConnect from '@/lib/db';
-import { Table } from '@/lib/models/table.model';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { Table } from "@/lib/models/table.model";
+import { getPublicRestaurant } from "@/lib/public-restaurant";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
 
 /**
  * GET /api/tables/info?restaurantId=xxx&tableNumber=1
- * Get table information by restaurant ID and table number
+ * Public lookup used by the customer flow to resolve a table from its QR URL.
  */
 export async function GET(request: NextRequest) {
-  try {
+  return withErrorHandling(async () => {
     const { searchParams } = new URL(request.url);
-    const restaurantId = searchParams.get('restaurantId');
-    const tableNumber = searchParams.get('tableNumber');
+    const restaurantId = searchParams.get("restaurantId");
+    const tableNumber = searchParams.get("tableNumber");
 
     if (!restaurantId || !tableNumber) {
-      return NextResponse.json(
-        { error: 'Restaurant ID and table number are required' },
-        { status: 400 }
-      );
+      throw new ApiError(400, "Restaurant ID and table number are required");
     }
 
     await dbConnect();
 
     const table = await Table.findOne({
       restaurantId,
-      tableNumber: parseInt(tableNumber)
+      tableNumber: parseInt(tableNumber, 10),
     });
 
     if (!table) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 404 }
-      );
+      throw new ApiError(404, "Table not found");
     }
 
-    return NextResponse.json({
-      _id: table._id.toString(),
-      tableNumber: table.tableNumber,
-      status: table.status,
-      capacity: table.capacity,
-      restaurantId: table.restaurantId,
+    return ok({
+      table: {
+        _id: table._id.toString(),
+        tableNumber: table.tableNumber,
+        status: table.status,
+        capacity: table.capacity,
+        restaurantId: table.restaurantId,
+      },
+      restaurant: await getPublicRestaurant(table.restaurantId),
     });
-  } catch (error: any) {
-    console.error('Error fetching table info:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch table information' },
-      { status: 500 }
-    );
-  }
+  });
 }

@@ -1,135 +1,69 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import dbConnect from '@/lib/db';
-import { Table } from '@/lib/models/table.model';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { Table } from "@/lib/models/table.model";
+import { updateTableSchema } from "@/lib/validations/table";
+import { getAuthRestaurantId } from "@/lib/auth";
+import { ApiError } from "@/lib/api-error";
+import { withErrorHandling, ok } from "@/lib/api";
+
+type RouteContext = { params: Promise<{ id: string }> };
 
 /**
  * PUT /api/tables/[id]
- * Update a table
+ * Update a table belonging to the authenticated restaurant.
  */
-export async function PUT(
-  request: NextRequest,
-  context: { params: { id: string } | Promise<{ id: string }> }
-) {
-  const params = await Promise.resolve(context.params);
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
+export async function PUT(request: NextRequest, context: RouteContext) {
+  return withErrorHandling(async () => {
+    const { id } = await context.params;
+    const restaurantId = getAuthRestaurantId(request);
 
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    const restaurantId = decoded.restaurantId;
-
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Restaurant ID not found in token' },
-        { status: 400 }
-      );
-    }
-
-    const { tableNumber, capacity, status, location } = await request.json();
+    const body = await request.json();
+    const validatedData = updateTableSchema.parse(body);
 
     await dbConnect();
 
-    const table = await Table.findOne({
-      _id: params.id,
-      restaurantId,
-    });
-
+    const table = await Table.findOne({ _id: id, restaurantId });
     if (!table) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 404 }
-      );
+      throw new ApiError(404, "Table not found");
     }
 
-    // Check if new table number already exists (exclude current table)
-    if (tableNumber && tableNumber !== table.tableNumber) {
+    if (
+      validatedData.tableNumber &&
+      validatedData.tableNumber !== table.tableNumber
+    ) {
       const existingTable = await Table.findOne({
         restaurantId,
-        tableNumber,
-        _id: { $ne: params.id },
+        tableNumber: validatedData.tableNumber,
+        _id: { $ne: id },
       });
       if (existingTable) {
-        return NextResponse.json(
-          { error: 'Table number already exists' },
-          { status: 409 }
-        );
+        throw new ApiError(409, "Table number already exists");
       }
     }
 
-    // Update fields
-    if (tableNumber) table.tableNumber = tableNumber;
-    if (capacity) table.capacity = capacity;
-    if (status) table.status = status;
-    if (location) table.location = location;
-
+    Object.assign(table, validatedData);
     await table.save();
 
-    return NextResponse.json(table);
-  } catch (error: any) {
-    console.error('Error updating table:', error);
-    return NextResponse.json(
-      { error: 'Failed to update table' },
-      { status: 500 }
-    );
-  }
+    return ok(table);
+  });
 }
 
 /**
  * DELETE /api/tables/[id]
- * Delete a table
+ * Delete a table belonging to the authenticated restaurant.
  */
-export async function DELETE(
-  request: NextRequest,
-  context: { params: { id: string } | Promise<{ id: string }> }
-) {
-  const params = await Promise.resolve(context.params);
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    const restaurantId = decoded.restaurantId;
-
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Restaurant ID not found in token' },
-        { status: 400 }
-      );
-    }
+export async function DELETE(request: NextRequest, context: RouteContext) {
+  return withErrorHandling(async () => {
+    const { id } = await context.params;
+    const restaurantId = getAuthRestaurantId(request);
 
     await dbConnect();
 
-    const table = await Table.findOneAndDelete({
-      _id: params.id,
-      restaurantId,
-    });
-
+    const table = await Table.findOneAndDelete({ _id: id, restaurantId });
     if (!table) {
-      return NextResponse.json(
-        { error: 'Table not found' },
-        { status: 404 }
-      );
+      throw new ApiError(404, "Table not found");
     }
 
-    return NextResponse.json({ message: 'Table deleted successfully' });
-  } catch (error: any) {
-    console.error('Error deleting table:', error);
-    return NextResponse.json(
-      { error: 'Failed to delete table' },
-      { status: 500 }
-    );
-  }
+    return ok({ message: "Table deleted successfully" });
+  });
 }

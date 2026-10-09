@@ -1,4 +1,5 @@
 import { Document, Types } from "mongoose";
+import type { MediaAsset, Model3d } from "./media";
 
 export interface IProduct extends Document {
   _id: Types.ObjectId;
@@ -6,7 +7,11 @@ export interface IProduct extends Document {
   description: string;
   price: number;
   category: "appetizer" | "main" | "dessert" | "beverage" | "special";
+  /** Cover image URL (Cloudinary upload or a pasted external URL). */
   image?: string;
+  gallery: MediaAsset[];
+  video?: MediaAsset;
+  model3d: Model3d;
   isAvailable: boolean;
   preparationTime: number;
   ingredients?: string[];
@@ -46,6 +51,7 @@ export interface IOrder extends Document {
   paymentStatus: "pending" | "paid" | "failed";
   specialRequests?: string;
   estimatedTime?: number;
+  readyBy?: Date;
   createdAt: Date;
   updatedAt: Date;
   completedAt?: Date;
@@ -57,6 +63,7 @@ export interface ITable extends Document {
   tableNumber: number;
   capacity: number;
   location?: string;
+  tableCode?: string;
   status: "available" | "occupied" | "reserved" | "maintenance";
   qrCode?: string;
   currentGuests: number;

@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server';
+import { ok } from "@/lib/api";
 
 /**
  * GET /api/ping
- * Simple ping endpoint for network diagnostics
+ * Simple ping endpoint for network diagnostics.
  */
 export async function GET() {
-  return NextResponse.json({ status: 'ok', timestamp: Date.now() });
+  return ok({ status: "ok", timestamp: Date.now() });
 }

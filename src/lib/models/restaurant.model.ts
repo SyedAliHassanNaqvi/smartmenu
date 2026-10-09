@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { defineModel } from "./define-model";
 
 export interface IRestaurant {
   _id?: string;
@@ -20,7 +21,8 @@ export interface IRestaurant {
     taxRate: number;
   };
   subscription: {
-    plan: "free" | "basic" | "premium";
+    /** "basic" is a legacy value from before plans were passed through signup. */
+    plan: "free" | "basic" | "starter" | "pro" | "premium";
     status: "active" | "inactive" | "suspended";
     expiresAt?: Date;
   };
@@ -82,7 +84,7 @@ const restaurantSchema = new mongoose.Schema<IRestaurant>(
     subscription: {
       plan: {
         type: String,
-        enum: ["free", "basic", "premium"],
+        enum: ["free", "basic", "starter", "pro", "premium"],
         default: "free",
       },
       status: {
@@ -100,4 +102,4 @@ const restaurantSchema = new mongoose.Schema<IRestaurant>(
 restaurantSchema.index({ ownerEmail: 1 });
 restaurantSchema.index({ "subscription.status": 1 });
 
-export const Restaurant = mongoose.models.Restaurant || mongoose.model<IRestaurant>("Restaurant", restaurantSchema);
+export const Restaurant = defineModel<IRestaurant>("Restaurant", restaurantSchema);

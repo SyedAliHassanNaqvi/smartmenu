@@ -1,4 +1,5 @@
 import mongoose from "mongoose";
+import { defineModel } from "./define-model";
 
 export interface IInvitation {
   _id?: string;
@@ -8,6 +9,7 @@ export interface IInvitation {
   restaurantId?: string; // Will be set when admin creates account
   status: "pending" | "used" | "expired";
   paymentId: string;
+  plan: "starter" | "pro" | "premium";
   amount: number;
   currency: string;
   createdAt: Date;
@@ -46,8 +48,13 @@ const invitationSchema = new mongoose.Schema<IInvitation>(
       type: String,
       required: true,
     },
+    plan: {
+      type: String,
+      enum: ["starter", "pro", "premium"],
+      default: "starter",
+    },
     amount: {
-      type: Number,
+      type: Number, // minor units (cents)
       required: true,
     },
     currency: {
@@ -68,6 +75,7 @@ const invitationSchema = new mongoose.Schema<IInvitation>(
 // Index for efficient lookups
 invitationSchema.index({ email: 1 });
 invitationSchema.index({ status: 1 });
+invitationSchema.index({ paymentId: 1 });
 invitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 }); // Auto-expire
 
-export const Invitation = mongoose.models.Invitation || mongoose.model<IInvitation>("Invitation", invitationSchema);
+export const Invitation = defineModel<IInvitation>("Invitation", invitationSchema);

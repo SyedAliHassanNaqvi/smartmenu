@@ -1,220 +1,119 @@
 'use client';
 
-import { use } from 'react';
-import { useState, useEffect } from 'react';
+import { use, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { useCart } from '@/hooks/use-cart';
+import { useQuery } from '@tanstack/react-query';
+import { MenuView } from '@/components/customer/MenuView';
+import { CartView } from '@/components/customer/CartView';
+import { OrderTracker } from '@/components/customer/OrderTracker';
+import { queryKeys } from '@/lib/query-keys';
+import { apiFetch } from '@/lib/api-client';
+import type { PublicRestaurant, PublicTable } from '@/types/public';
 
-interface MenuItem {
-  _id: string;
-  name: string;
-  description: string;
-  price: number;
-  category: string;
-  image?: string;
-  isAvailable: boolean;
-  restaurantId: string;
-}
+type ResolvedTable = { table: PublicTable; restaurant: PublicRestaurant };
 
-interface TableInfo {
-  _id: string;
-  tableNumber: number;
-  status: string;
-  capacity: number;
-  restaurantId: string;
+type CustomerRoute =
+  | { view: 'menu' }
+  | { view: 'cart' }
+  | { view: 'order'; orderId: string };
+
+/**
+ * Supported URLs (base = QR code, or legacy "restaurantId/tableNumber"):
+ *   /customer/<base>                 menu
+ *   /customer/<base>/cart            cart
+ *   /customer/<base>/order/<orderId> live order tracking
+ */
+function parseSlug(slug: string[]): { base: string[]; route: CustomerRoute } {
+  const orderIndex = slug.lastIndexOf('order');
+  if (orderIndex > 0 && slug.length === orderIndex + 2) {
+    return { base: slug.slice(0, orderIndex), route: { view: 'order', orderId: slug[orderIndex + 1] } };
+  }
+  if (slug.length > 1 && slug[slug.length - 1] === 'cart') {
+    return { base: slug.slice(0, -1), route: { view: 'cart' } };
+  }
+  return { base: slug, route: { view: 'menu' } };
 }
 
 export default function CustomerView({
-  params
+  params,
 }: {
-  params: Promise<{ slug: string[] }>
+  params: Promise<{ slug: string[] }>;
 }) {
-  const resolvedParams = use(params);
-  const { slug } = resolvedParams;
+  const { slug } = use(params);
   const router = useRouter();
 
-  const [menuItems, setMenuItems] = useState<MenuItem[]>([]);
-  const [tableInfo, setTableInfo] = useState<TableInfo | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
-  const { items, itemCount, total, addToCart, removeFromCart } = useCart();
+  const { base, route } = parseSlug(slug);
+  const isCodeRoute = base.length === 1;
+  const isLegacyRoute = base.length === 2;
+  const code = isCodeRoute ? base[0] : '';
+  const [restaurantId, tableNumber] = isLegacyRoute ? base : ['', ''];
 
   useEffect(() => {
-    // Handle different URL formats
-    let restaurantId: string;
-    let tableNumber: string;
-
-    if (slug.length === 1) {
-      // Legacy format: /customer/[tableId]
-      // For backward compatibility, assume tableId contains restaurant info
-      // For now, redirect to a migration page or show an error
-      router.replace('/migration?legacyTableId=' + slug[0]);
-      return;
-    } else if (slug.length === 2) {
-      // New format: /customer/[restaurantId]/[tableNumber]
-      [restaurantId, tableNumber] = slug;
-    } else {
-      setError('Invalid URL format');
-      setLoading(false);
-      return;
+    if (!isCodeRoute && !isLegacyRoute) {
+      router.replace('/');
     }
+  }, [isCodeRoute, isLegacyRoute, router]);
 
-    // Fetch table info and menu items
-    const fetchData = async () => {
-      try {
-        // Fetch table info
-        const tableResponse = await fetch(`/api/tables/info?restaurantId=${restaurantId}&tableNumber=${tableNumber}`);
-        if (!tableResponse.ok) {
-          throw new Error('Table not found');
-        }
-        const tableData = await tableResponse.json();
-        setTableInfo(tableData.table);
+  const codeQuery = useQuery({
+    queryKey: queryKeys.tables.resolve(code),
+    queryFn: () => apiFetch<ResolvedTable>(`/api/tables/resolve?code=${encodeURIComponent(code)}`),
+    enabled: isCodeRoute,
+  });
 
-        // Fetch menu items
-        const menuResponse = await fetch(`/api/products?restaurantId=${restaurantId}`);
-        if (menuResponse.ok) {
-          const menuData = await menuResponse.json();
-          setMenuItems(menuData.products || []);
-        }
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load menu');
-      } finally {
-        setLoading(false);
-      }
-    };
+  const legacyQuery = useQuery({
+    queryKey: queryKeys.tables.info(restaurantId, Number(tableNumber)),
+    queryFn: () =>
+      apiFetch<ResolvedTable>(
+        `/api/tables/info?restaurantId=${encodeURIComponent(restaurantId)}&tableNumber=${encodeURIComponent(tableNumber)}`
+      ),
+    enabled: isLegacyRoute,
+  });
 
-    fetchData();
-  }, [slug, router]);
+  if (!isCodeRoute && !isLegacyRoute) {
+    return null;
+  }
 
-  const handleAddToCart = (item: MenuItem) => {
-    addToCart(item._id, item.name, item.price, 1);
-  };
+  const query = isCodeRoute ? codeQuery : legacyQuery;
+  const table = query.data?.table ?? null;
+  const restaurant = query.data?.restaurant ?? null;
 
-  const getCategoryColor = (category: string) => {
-    const colors = {
-      appetizer: 'bg-blue-100 text-blue-800',
-      main: 'bg-green-100 text-green-800',
-      dessert: 'bg-pink-100 text-pink-800',
-      beverage: 'bg-yellow-100 text-yellow-800',
-    };
-    return colors[category as keyof typeof colors] || 'bg-gray-100 text-gray-800';
-  };
-
-  if (loading) {
+  if (query.isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-muted-foreground">Loading menu...</p>
-        </div>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600"></div>
       </div>
     );
   }
 
-  if (error) {
+  if (query.isError || !table || !restaurant) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center px-6">
         <div className="text-center">
-          <h2 className="text-xl font-semibold text-red-600 mb-2">Error</h2>
-          <p className="text-muted-foreground mb-4">{error}</p>
-          <Button onClick={() => router.push('/')}>
+          <p className="text-5xl mb-4">🔍</p>
+          <h2 className="text-xl font-semibold text-slate-900 mb-2">Invalid Link</h2>
+          <p className="text-slate-500 mb-6">
+            {(query.error as Error | null)?.message || 'This link is not valid. Please scan the QR code again.'}
+          </p>
+          <button
+            onClick={() => router.push('/')}
+            className="rounded-full bg-indigo-600 text-white px-6 py-3 font-semibold active:scale-95 transition"
+          >
             Go Home
-          </Button>
+          </button>
         </div>
       </div>
     );
   }
 
-  const categories = [...new Set(menuItems.map(item => item.category))];
+  const tableKey = base.join('/');
+  const viewProps = { table, restaurant, code: tableKey };
 
-  return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <header className="bg-white shadow-sm border-b">
-        <div className="max-w-4xl mx-auto px-4 py-4">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">SmartMenu</h1>
-              {tableInfo && (
-                <p className="text-sm text-gray-600">
-                  Table {tableInfo.tableNumber} • {tableInfo.capacity} seats
-                </p>
-              )}
-            </div>
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => router.push(`/customer/${slug.join('/')}/ar-view`)}
-              >
-                🎮 AR View
-              </Button>
-              <Button
-                variant="outline"
-                className="relative"
-                onClick={() => router.push(`/customer/${slug.join('/')}/cart`)}
-              >
-                🛒 Cart
-                {itemCount > 0 && (
-                  <span className="absolute -top-2 -right-2 bg-red-500 text-white text-xs rounded-full h-5 w-5 flex items-center justify-center">
-                    {itemCount}
-                  </span>
-                )}
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Menu Content */}
-      <main className="max-w-4xl mx-auto px-4 py-8">
-        {categories.map(category => (
-          <section key={category} className="mb-8">
-            <h2 className="text-xl font-semibold mb-4 capitalize">{category}</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {menuItems
-                .filter(item => item.category === category && item.isAvailable)
-                .map(item => (
-                  <Card key={item._id} className="overflow-hidden hover:shadow-lg transition-shadow">
-                    <div className="aspect-video bg-gray-100 flex items-center justify-center text-4xl">
-                      {item.image || '🍽️'}
-                    </div>
-                    <div className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <h3 className="font-semibold text-lg">{item.name}</h3>
-                        <Badge className={getCategoryColor(item.category)}>
-                          {item.category}
-                        </Badge>
-                      </div>
-                      <p className="text-gray-600 text-sm mb-3">{item.description}</p>
-                      <div className="flex justify-between items-center">
-                        <span className="text-lg font-bold text-green-600">
-                          €{item.price.toFixed(2)}
-                        </span>
-                        <Button
-                          onClick={() => handleAddToCart(item)}
-                          size="sm"
-                        >
-                          Add to Cart
-                        </Button>
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-            </div>
-          </section>
-        ))}
-
-        {menuItems.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-gray-500">No menu items available at the moment.</p>
-          </div>
-        )}
-      </main>
-    </div>
-  );
+  switch (route.view) {
+    case 'cart':
+      return <CartView {...viewProps} />;
+    case 'order':
+      return <OrderTracker {...viewProps} orderId={route.orderId} />;
+    default:
+      return <MenuView {...viewProps} />;
+  }
 }

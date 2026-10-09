@@ -93,7 +93,7 @@ export class VisionService {
   /**
    * Mock Gemini analysis - returns dish recognition
    */
-  static async mockGeminiAnalysis(imageData: Blob): Promise<VisionAnalysisResult> {
+  static async mockGeminiAnalysis(_imageData: Blob): Promise<VisionAnalysisResult> {
     return {
       dishName: "Margherita Pizza",
       productId: "prod-margherita-1",

@@ -1,51 +1,37 @@
-import { NextRequest, NextResponse } from 'next/server';
-import jwt from 'jsonwebtoken';
-import dbConnect from '@/lib/db';
-import { Table } from '@/lib/models/table.model';
-import { generateTableQR } from '@/services/qr-service';
+﻿import type { NextRequest } from "next/server";
+import { dbConnect } from "@/lib/db";
+import { Table } from "@/lib/models/table.model";
+import { generateTableQR } from "@/services/qr-service";
+import { getAuthRestaurantId } from "@/lib/auth";
+import { generateTableCode } from "@/lib/table-token";
+import { withErrorHandling, ok } from "@/lib/api";
 
 /**
  * GET /api/qr/codes
- * Fetch all QR codes for tables belonging to the authenticated restaurant
+ * Fetch all tables (with QR code data URLs) for the authenticated restaurant.
  */
 export async function GET(request: NextRequest) {
-  try {
-    const authHeader = request.headers.get('authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json(
-        { error: 'Authentication required' },
-        { status: 401 }
-      );
-    }
-
-    const token = authHeader.substring(7);
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback-secret') as any;
-    const restaurantId = decoded.restaurantId;
-
-    if (!restaurantId) {
-      return NextResponse.json(
-        { error: 'Restaurant ID not found in token' },
-        { status: 400 }
-      );
-    }
+  return withErrorHandling(async () => {
+    const restaurantId = getAuthRestaurantId(request);
 
     await dbConnect();
 
-    // Fetch all tables with QR code URLs
     const tables = await Table.find({ restaurantId })
-      .select('_id tableNumber capacity qrCode status')
+      .select("_id tableNumber capacity qrCode status tableCode")
       .sort({ tableNumber: 1 });
 
-    // Generate QR code images for tables that have URLs
     const qrCodes = await Promise.all(
       tables.map(async (table) => {
-        let qrCode = '';
-        if (table.qrCode) {
-          try {
-            qrCode = await generateTableQR(`${restaurantId}/${table.tableNumber}`);
-          } catch (err) {
-            console.error(`Failed to generate QR for table ${table.tableNumber}:`, err);
-          }
+        const isNewCode = !table.tableCode;
+        const tableCode = table.tableCode || (table.tableCode = generateTableCode());
+        const url = `${
+          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+        }/customer/${tableCode}`;
+        // Always persist a newly assigned code, and refresh the stored URL so
+        // the two never drift apart.
+        if (isNewCode || table.qrCode !== url) {
+          table.qrCode = url;
+          await table.save();
         }
         return {
           tableId: table._id.toString(),
@@ -53,18 +39,12 @@ export async function GET(request: NextRequest) {
           capacity: table.capacity,
           status: table.status,
           url: table.qrCode,
-          qrCode,
+          qrCode: await generateTableQR(tableCode),
           generatedAt: table.updatedAt,
         };
-      })
+      }),
     );
 
-    return NextResponse.json(qrCodes);
-  } catch (error: any) {
-    console.error('Error fetching QR codes:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch QR codes' },
-      { status: 500 }
-    );
-  }
+    return ok(qrCodes);
+  });
 }

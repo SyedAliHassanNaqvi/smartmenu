@@ -7,12 +7,20 @@ const eslintConfig = defineConfig([
   ...nextTs,
   // Override default ignores of eslint-config-next.
   globalIgnores([
-    // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "scripts/**",
+    "**/*.d.ts", // declaration files for untyped third-party libs (A-Frame, etc.)
   ]),
+  {
+    rules: {
+      // Tech debt: dynamic third-party integrations (A-Frame, Web Audio, Pusher)
+      // still rely on `any`. Keep it visible as a warning while new code is strict.
+      "@typescript-eslint/no-explicit-any": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;
