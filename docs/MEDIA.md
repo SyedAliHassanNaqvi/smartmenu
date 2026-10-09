@@ -30,11 +30,11 @@ Browser ── POST /api/media/sign { kind } ──▶ server (admin only)
         ── POST/PUT /api/products ──▶ server checks the URLs, then saves
 ```
 
-| Kind | Cloudinary resource | Formats | Browser limit |
-| --- | --- | --- | --- |
-| `image` | image | jpg, jpeg, png, webp, avif | 10 MB |
-| `video` | video | mp4, mov, webm | 100 MB |
-| `model` | image (Cloudinary 3D) | glb | 10 MB |
+| Kind    | Cloudinary resource   | Formats                    | Browser limit |
+| ------- | --------------------- | -------------------------- | ------------- |
+| `image` | image                 | jpg, jpeg, png, webp, avif | 10 MB         |
+| `video` | video                 | mp4, mov, webm             | 100 MB        |
+| `model` | image (Cloudinary 3D) | glb                        | 10 MB         |
 
 ## Security
 
@@ -50,14 +50,14 @@ Browser ── POST /api/media/sign { kind } ──▶ server (admin only)
 
 ## Code map
 
-| File | Role |
-| --- | --- |
-| `src/lib/media-rules.ts` | Kinds, formats and size limits (shared by client and server) |
-| `src/services/media-service.ts` | Signing, URL ownership checks, asset deletion (server) |
-| `src/lib/product-media.ts` | Converts validated input into stored product media and works out removed files |
-| `src/app/api/media/sign/route.ts` | Signing endpoint |
-| `src/lib/media-client.ts`, `src/hooks/use-media-upload.ts` | Browser upload with progress and cancel |
-| `src/components/admin/MediaUploader.tsx`, `ProductMediaFields.tsx` | Admin UI |
+| File                                                               | Role                                                                           |
+| ------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| `src/lib/media-rules.ts`                                           | Kinds, formats and size limits (shared by client and server)                   |
+| `src/services/media-service.ts`                                    | Signing, URL ownership checks, asset deletion (server)                         |
+| `src/lib/product-media.ts`                                         | Converts validated input into stored product media and works out removed files |
+| `src/app/api/media/sign/route.ts`                                  | Signing endpoint                                                               |
+| `src/lib/media-client.ts`, `src/hooks/use-media-upload.ts`         | Browser upload with progress and cancel                                        |
+| `src/components/admin/MediaUploader.tsx`, `ProductMediaFields.tsx` | Admin UI                                                                       |
 
 ## Product fields
 
